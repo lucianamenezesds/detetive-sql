@@ -3,16 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Detetive SQL — O caso do diamante</title>
+<title>Detetive SQL</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/alasql@4.4.0/dist/alasql.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-asm.js"></script>
 <style>
 :root{
   --bg:#E6EAF0; --paper:#F7F8FA; --ink:#1B2A4A; --muted:#5A6782; --line:#C9D1DD;
-  --pin:#B8322A; --mark:#F2D14B; --ok:#1F7A4D; --code-bg:#1B2A4A; --code-fg:#E8ECF4;
-  --chip:#DCE2EB;
+  --pin:#B8322A; --mark:#F2D14B; --ok:#1F7A4D; --code-bg:#1B2A4A; --code-fg:#E8ECF4; --chip:#DCE2EB;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
@@ -21,25 +20,27 @@
   :root:not([data-theme="light"]){
     color-scheme:dark;
     --bg:#111829; --paper:#18223A; --ink:#E4E9F2; --muted:#9AA6BF; --line:#2C3956;
-    --pin:#E0574C; --mark:#E8C547; --ok:#4CC08A; --code-bg:#0C1220; --code-fg:#E4E9F2;
-    --chip:#24304D;
+    --pin:#E0574C; --mark:#E8C547; --ok:#4CC08A; --code-bg:#0C1220; --code-fg:#E4E9F2; --chip:#24304D;
   }
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
   --bg:#111829; --paper:#18223A; --ink:#E4E9F2; --muted:#9AA6BF; --line:#2C3956;
-  --pin:#E0574C; --mark:#E8C547; --ok:#4CC08A; --code-bg:#0C1220; --code-fg:#E4E9F2;
-  --chip:#24304D;
+  --pin:#E0574C; --mark:#E8C547; --ok:#4CC08A; --code-bg:#0C1220; --code-fg:#E4E9F2; --chip:#24304D;
 }
 *,*::before,*::after{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.55}
 .wrap{max-width:1180px;margin:0 auto;padding:20px 16px 48px}
-header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px}
-h1{font-family:"Special Elite","Courier New",monospace;font-weight:400;font-size:clamp(1.7rem,4vw,2.5rem);line-height:1.1;margin:0;letter-spacing:.01em}
-.sub{color:var(--muted);margin:4px 0 0;font-size:.95rem}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px}
+h1{font-family:"Special Elite","Courier New",monospace;font-weight:400;font-size:clamp(1.7rem,4vw,2.5rem);line-height:1.1;margin:0}
+.sub{color:var(--muted);margin:4px 0 0;font-size:.95rem;max-width:62ch}
 .stats{display:flex;gap:18px;font-size:.92rem;color:var(--muted)}
 .stats b{color:var(--ink);font-size:1.15rem;font-weight:600}
+.cases{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.cases button{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:5px;padding:8px 14px;font:500 .92rem "IBM Plex Sans",system-ui,sans-serif;cursor:pointer;text-align:left}
+.cases button span{display:block;font-size:.78rem;color:var(--muted);font-weight:400}
+.cases button[aria-pressed="true"]{border:2px solid var(--pin);padding:7px 13px}
 .trail{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
 .trail button{width:38px;height:38px;border-radius:50%;border:2px solid var(--line);background:var(--paper);color:var(--muted);font:500 .9rem "IBM Plex Mono",ui-monospace,monospace;cursor:pointer}
 .trail button.done{border-color:var(--ok);color:var(--ok)}
@@ -50,14 +51,16 @@ h1{font-family:"Special Elite","Courier New",monospace;font-weight:400;font-size
 @media (max-width:860px){.grid{grid-template-columns:1fr}}
 .panel{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:18px}
 .mission h2{font-family:"Special Elite","Courier New",monospace;font-weight:400;font-size:1.45rem;margin:0 0 6px}
-.mission .concept{display:inline-block;background:var(--mark);color:#1B2A4A;padding:1px 8px;border-radius:3px;font:500 .82rem "IBM Plex Mono",ui-monospace,monospace;margin-bottom:10px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.concept{display:inline-block;background:var(--mark);color:#1B2A4A;padding:1px 8px;border-radius:3px;font:500 .82rem "IBM Plex Mono",ui-monospace,monospace}
+.aula{display:inline-block;border:1px solid var(--line);color:var(--muted);padding:0 8px;border-radius:3px;font-size:.82rem}
 .story{max-width:68ch;margin:0 0 10px}
 .task{border-left:4px solid var(--pin);padding:6px 12px;margin:12px 0;max-width:68ch}
 .hint{margin-top:8px;font-size:.93rem;color:var(--muted);max-width:68ch}
-.hint code,.story code,.task code{font-family:"IBM Plex Mono",ui-monospace,monospace;background:var(--chip);padding:0 4px;border-radius:3px;font-size:.88em}
+.hint code,.story code,.task code,.feedback code{font-family:"IBM Plex Mono",ui-monospace,monospace;background:var(--chip);padding:0 4px;border-radius:3px;font-size:.88em}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 8px}
 .chips button{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:4px;padding:4px 9px;font:500 .8rem "IBM Plex Mono",ui-monospace,monospace;cursor:pointer}
-textarea{width:100%;min-height:130px;resize:vertical;background:var(--code-bg);color:var(--code-fg);border:none;border-radius:6px;padding:14px;font:15px/1.5 "IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;caret-color:var(--mark)}
+textarea{width:100%;min-height:140px;resize:vertical;background:var(--code-bg);color:var(--code-fg);border:none;border-radius:6px;padding:14px;font:15px/1.5 "IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;caret-color:var(--mark)}
 textarea:focus-visible,button:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
 .btn{border:none;border-radius:5px;padding:10px 16px;font:600 .95rem "IBM Plex Sans",system-ui,sans-serif;cursor:pointer}
@@ -67,16 +70,33 @@ textarea:focus-visible,button:focus-visible{outline:3px solid var(--mark);outlin
 .feedback{margin-top:14px;padding:10px 14px;border-radius:5px;display:none;max-width:72ch}
 .feedback.ok{display:block;background:color-mix(in srgb,var(--ok) 15%,transparent);border:1px solid var(--ok)}
 .feedback.err{display:block;background:color-mix(in srgb,var(--pin) 12%,transparent);border:1px solid var(--pin)}
-.feedback.info{display:block;background:var(--chip);border:1px solid var(--line)}
-.result{margin-top:14px;overflow-x:auto;max-height:340px;overflow-y:auto;border:1px solid var(--line);border-radius:5px;display:none}
+.result{margin-top:14px;overflow-x:auto;max-height:360px;overflow-y:auto;border:1px solid var(--line);border-radius:5px;display:none}
 table{border-collapse:collapse;width:100%;font:.88rem "IBM Plex Mono",ui-monospace,monospace}
-th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);white-space:pre}
 th{background:var(--chip);position:sticky;top:0}
+td.null{color:var(--muted);font-style:italic}
+tr.extra td{background:color-mix(in srgb,var(--pin) 16%,transparent)}
+.hint b{color:var(--ink)}
+.meter{margin-top:12px;border:1px solid var(--line);border-radius:5px;padding:10px 12px;max-width:72ch;font-size:.9rem}
+.meter-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.meter-top b{font:600 1.05rem "IBM Plex Mono",ui-monospace,monospace}
+.bar{position:relative;height:10px;background:var(--chip);border-radius:5px;overflow:hidden;margin:8px 0 6px}
+.bar span{display:block;height:100%;background:var(--ok);border-radius:5px}
+.bar span.over{background:var(--pin)}
+.bar i{position:absolute;top:0;bottom:0;width:2px;background:var(--ink)}
+.meter-sub{color:var(--muted);font-size:.82rem}
+.options{display:grid;gap:8px;margin-top:14px;max-width:72ch}
+.options button{text-align:left;background:var(--paper);border:2px solid var(--line);border-radius:6px;padding:10px 12px;cursor:pointer;color:var(--ink);font:inherit;line-height:1.45}
+.options button code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.85em;white-space:normal}
+.options button.wrong{border-color:var(--pin);opacity:.6}
+.options button.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,transparent)}
+.options button:disabled{cursor:default}
 .rowcount{font-size:.82rem;color:var(--muted);margin-top:6px}
 aside h3{font-family:"Special Elite","Courier New",monospace;font-weight:400;font-size:1.15rem;margin:0 0 10px}
 .tbl{margin-bottom:12px}
 .tbl button{background:none;border:none;color:var(--ink);font:600 .95rem "IBM Plex Mono",ui-monospace,monospace;padding:0;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
 .tbl ul{list-style:none;margin:4px 0 0;padding:0 0 0 12px;font:.82rem "IBM Plex Mono",ui-monospace,monospace;color:var(--muted)}
+.dialect{font-size:.82rem;color:var(--muted);margin:0 0 12px}
 .notes{margin-top:16px;border-top:1px dashed var(--line);padding-top:12px;font-size:.9rem}
 .notes ol{padding-left:18px;margin:6px 0 0}
 .notes li{margin-bottom:4px}
@@ -97,7 +117,7 @@ aside h3{font-family:"Special Elite","Courier New",monospace;font-weight:400;fon
   <header class="top">
     <div>
       <h1>Detetive SQL</h1>
-      <p class="sub">O diamante do Museu Aurora sumiu. Só as consultas certas vão revelar quem levou.</p>
+      <p class="sub" id="intro"></p>
     </div>
     <div class="stats">
       <div>Pontos <b id="xp">0</b></div>
@@ -105,179 +125,1129 @@ aside h3{font-family:"Special Elite","Courier New",monospace;font-weight:400;fon
     </div>
   </header>
 
+  <nav class="cases" id="cases" aria-label="Escolha o caso"></nav>
   <nav class="trail" id="trail" aria-label="Fases do caso"></nav>
 
   <div class="grid">
-    <main class="panel" id="main"></main>
+    <main class="panel" id="main"><p>Carregando o motor de SQL…</p></main>
     <aside class="panel">
       <h3>Arquivo do caso</h3>
+      <p class="dialect" id="dialect"></p>
       <div id="schema"></div>
       <div class="notes">
         <strong>Anotações do detetive</strong>
         <ol id="notes"></ol>
       </div>
-      <div class="reset"><button id="resetBtn">Recomeçar o caso do zero</button></div>
+      <div class="reset"><button id="resetBtn">Recomeçar este caso do zero</button></div>
     </aside>
   </div>
 </div>
 
 <script>
-const DATA = {
-  pessoas: {
-    cols:["id","nome","idade","cidade","profissao"],
-    rows:[
-      [1,"Helena Duarte",34,"Porto Claro","curadora"],
-      [2,"Marcos Vieira",41,"Vila Serena","segurança"],
-      [3,"Júlia Ramos",28,"Porto Claro","restauradora"],
-      [4,"Otávio Lima",52,"Monte Alto","colecionador"],
-      [5,"Bianca Torres",23,"Porto Claro","estagiária"],
-      [6,"Rafael Nunes",37,"Vila Serena","eletricista"],
-      [7,"Sofia Mendes",45,"Monte Alto","guia"],
-      [8,"Caio Ferraz",30,"Porto Claro","fotógrafo"]
-    ]
-  },
-  visitas: {
-    cols:["id","pessoa_id","dia","hora_entrada","hora_saida"],
-    rows:[
-      [1,1,"2026-10-13","08:00","18:00"],[2,1,"2026-10-14","08:00","19:30"],
-      [3,2,"2026-10-14","18:00","23:50"],[4,3,"2026-10-14","09:00","17:00"],
-      [5,4,"2026-10-12","14:00","16:00"],[6,4,"2026-10-14","15:00","16:30"],
-      [7,6,"2026-10-14","20:00","22:40"],[8,7,"2026-10-13","10:00","15:00"],
-      [9,8,"2026-10-14","21:00","23:15"],[10,5,"2026-10-13","09:00","17:00"],
-      [11,6,"2026-10-11","10:00","12:00"]
-    ]
-  },
-  depoimentos: {
-    cols:["id","pessoa_id","texto"],
-    rows:[
+// ===== Motor: sql.js (SQLite) com atalhos no estilo BigQuery =====
+function bqTranslate(sql){
+  return sql
+    .replace(/(^|[^A-Za-z0-9_'])[rR]'((?:[^']|'')*)'/g, (m,pre,body)=>`${pre}'${body}'`)
+    .replace(/\bSPLIT\s*\(((?:[^()]|\([^()]*\))*?)\)\s*\[\s*(?:SAFE_)?OFFSET\s*\(\s*(\d+)\s*\)\s*\]/gi, (m,args,n)=>`BQ_SPLIT_AT(${args}, ${n})`)
+    .replace(/\bINTERVAL\s+(-?\d+)\s+(DAY|WEEK|MONTH|YEAR|HOUR|MINUTE)\b/gi, (m,n,u)=>`${n}, '${u.toUpperCase()}'`)
+    .replace(/\bEXTRACT\s*\(\s*(YEAR|MONTH|DAY|HOUR|MINUTE|DAYOFWEEK)\s+FROM\s+/gi, (m,p)=>`BQ_EXTRACT('${p.toUpperCase()}', `)
+    .replace(/,\s*(SECOND|MINUTE|HOUR|DAY|WEEK|MONTH|YEAR)\s*\)/gi, (m,p)=>`, '${p.toUpperCase()}')`)
+    .replace(/(^|[^A-Za-z0-9_])IF\s*\(/gi, (m,pre)=>`${pre}IIF(`);
+}
+function parseDt(s){
+  if (s == null) return null;
+  const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  if (!m) return null;
+  return Date.UTC(+m[1], +m[2]-1, +m[3], +(m[4]||0), +(m[5]||0), +(m[6]||0));
+}
+function addShims(db){
+  db.create_function("INITCAP", s => s == null ? null : String(s).toLowerCase().replace(/(^|[\s\-])(\p{L})/gu, (m,a,b)=>a+b.toUpperCase()));
+  db.create_function("MOD", (a,b) => (a == null || b == null) ? null : a % b);
+  const diff = (a,b,unit) => {
+    const ta = parseDt(a), tb = parseDt(b);
+    if (ta == null || tb == null) return null;
+    const u = String(unit).toUpperCase();
+    if (u === "MONTH" || u === "YEAR"){
+      const da = new Date(ta), db2 = new Date(tb);
+      const months = (da.getUTCFullYear()-db2.getUTCFullYear())*12 + (da.getUTCMonth()-db2.getUTCMonth());
+      return u === "MONTH" ? months : da.getUTCFullYear()-db2.getUTCFullYear();
+    }
+    const div = {SECOND:1e3, MINUTE:6e4, HOUR:36e5, DAY:864e5, WEEK:6048e5}[u] || 6e4;
+    return Math.trunc((ta - tb) / div);
+  };
+  db.create_function("DATETIME_DIFF", diff);
+  db.create_function("DATE_DIFF", diff);
+  const pad = n => String(n).padStart(2,"0");
+  const fmtDate = t => { const d = new Date(t); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`; };
+  const fmtDateTime = t => { const d = new Date(t); return `${fmtDate(t)} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`; };
+  const hasTime = v => /\d{2}:\d{2}/.test(String(v));
+  db.create_function("UPPER", v => v == null ? null : String(v).toUpperCase());
+  db.create_function("LOWER", v => v == null ? null : String(v).toLowerCase());
+  db.create_function("STRPOS", (t, alvo) => (t == null || alvo == null) ? null : String(t).indexOf(String(alvo)) + 1);
+  db.create_function("BQ_SPLIT_AT", (t, sep, n) => { if (t == null) return null; const parts = String(t).split(sep == null ? "," : String(sep)); return n < parts.length ? parts[n] : null; });
+  db.create_function("REGEXP_REPLACE", (t, pat, rep) => t == null ? null : String(t).replace(new RegExp(String(pat), "g"), String(rep).replace(/\\(\d)/g, "$$$1")));
+  db.create_function("REGEXP_CONTAINS", (t, pat) => t == null ? null : (new RegExp(String(pat)).test(String(t)) ? 1 : 0));
+  const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const fmt = (f, v) => {
+    const t = parseDt(v); if (t == null || f == null) return null;
+    const d = new Date(t);
+    return String(f).replace(/%([YmdABabHMS])/g, (m,c) => ({
+      Y:d.getUTCFullYear(), m:pad(d.getUTCMonth()+1), d:pad(d.getUTCDate()),
+      A:DAYS[d.getUTCDay()], a:DAYS[d.getUTCDay()].slice(0,3), B:MONTHS[d.getUTCMonth()], b:MONTHS[d.getUTCMonth()].slice(0,3),
+      H:pad(d.getUTCHours()), M:pad(d.getUTCMinutes()), S:pad(d.getUTCSeconds())
+    })[c]);
+  };
+  db.create_function("FORMAT_DATE", fmt);
+  db.create_function("FORMAT_DATETIME", fmt);
+  db.create_function("DATE_TRUNC", (v, unit) => {
+    const t = parseDt(v); if (t == null) return null;
+    const d = new Date(t); const u = String(unit).toUpperCase();
+    let r;
+    if (u === "YEAR") r = Date.UTC(d.getUTCFullYear(), 0, 1);
+    else if (u === "MONTH") r = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
+    else if (u === "WEEK") r = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - d.getUTCDay());
+    else r = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+    return fmtDate(r);
+  });
+  const shift = (v, n, unit, sign) => {
+    const t = parseDt(v); if (t == null || n == null) return null;
+    const d = new Date(t); const k = sign * Number(n); const u = String(unit).toUpperCase();
+    if (u === "DAY") d.setUTCDate(d.getUTCDate() + k);
+    else if (u === "WEEK") d.setUTCDate(d.getUTCDate() + 7*k);
+    else if (u === "MONTH" || u === "YEAR"){
+      const total = d.getUTCFullYear()*12 + d.getUTCMonth() + (u === "MONTH" ? k : 12*k);
+      const y = Math.floor(total/12), m = total - y*12;
+      const last = new Date(Date.UTC(y, m+1, 0)).getUTCDate();
+      d.setUTCFullYear(y, m, Math.min(d.getUTCDate(), last));
+    }
+    else if (u === "HOUR") d.setUTCHours(d.getUTCHours() + k);
+    else if (u === "MINUTE") d.setUTCMinutes(d.getUTCMinutes() + k);
+    return hasTime(v) ? fmtDateTime(d.getTime()) : fmtDate(d.getTime());
+  };
+  for (const [name, sign] of [["DATE_ADD",1],["DATE_SUB",-1],["DATETIME_ADD",1],["DATETIME_SUB",-1]])
+    db.create_function(name, (v, n, u) => shift(v, n, u, sign));
+  db.create_function("BQ_EXTRACT", (part, v) => {
+    const t = parseDt(v); if (t == null) return null;
+    const d = new Date(t);
+    switch (part){
+      case "YEAR": return d.getUTCFullYear();
+      case "MONTH": return d.getUTCMonth()+1;
+      case "DAY": return d.getUTCDate();
+      case "HOUR": return d.getUTCHours();
+      case "MINUTE": return d.getUTCMinutes();
+      case "DAYOFWEEK": return d.getUTCDay()+1;
+    }
+    return null;
+  });
+}
+
+// ===== Caso 1: O diamante do Museu Aurora =====
+const CASE1 = {
+  id:"caso1", key:"detetive-sql-v1",
+  title:"O diamante do Museu Aurora",
+  intro:"O diamante do Museu Aurora sumiu. Só as consultas certas vão revelar quem levou.",
+  tables:{
+    pessoas:{cols:["id INTEGER","nome TEXT","idade INTEGER","cidade TEXT","profissao TEXT"], rows:[
+      [1,"Helena Duarte",34,"Porto Claro","curadora"],[2,"Marcos Vieira",41,"Vila Serena","segurança"],
+      [3,"Júlia Ramos",28,"Porto Claro","restauradora"],[4,"Otávio Lima",52,"Monte Alto","colecionador"],
+      [5,"Bianca Torres",23,"Porto Claro","estagiária"],[6,"Rafael Nunes",37,"Vila Serena","eletricista"],
+      [7,"Sofia Mendes",45,"Monte Alto","guia"],[8,"Caio Ferraz",30,"Porto Claro","fotógrafo"]]},
+    visitas:{cols:["id INTEGER","pessoa_id INTEGER","dia TEXT","hora_entrada TEXT","hora_saida TEXT"], rows:[
+      [1,1,"2026-10-13","08:00","18:00"],[2,1,"2026-10-14","08:00","19:30"],[3,2,"2026-10-14","18:00","23:50"],
+      [4,3,"2026-10-14","09:00","17:00"],[5,4,"2026-10-12","14:00","16:00"],[6,4,"2026-10-14","15:00","16:30"],
+      [7,6,"2026-10-14","20:00","22:40"],[8,7,"2026-10-13","10:00","15:00"],[9,8,"2026-10-14","21:00","23:15"],
+      [10,5,"2026-10-13","09:00","17:00"],[11,6,"2026-10-11","10:00","12:00"]]},
+    depoimentos:{cols:["id INTEGER","pessoa_id INTEGER","texto TEXT"], rows:[
       [1,1,"Saí antes das 20h, o alarme ainda estava ligado."],
       [2,2,"Fiz a ronda às 22h e ouvi passos perto da sala do diamante."],
       [3,7,"Na semana passada vi alguém fotografando as câmeras de segurança."],
       [4,3,"Encontrei marcas de luvas na vitrine pela manhã."],
       [5,6,"Consertei a fiação da ala leste até umas 22h30."],
-      [6,5,"Vi uma pessoa com uma bolsa de câmera saindo pelos fundos tarde da noite."]
-    ]
+      [6,5,"Vi uma pessoa com uma bolsa de câmera saindo pelos fundos tarde da noite."]]},
+    compras:{cols:["id INTEGER","pessoa_id INTEGER","item TEXT","valor REAL","dia TEXT"], rows:[
+      [1,6,"luvas de látex",18.9,"2026-10-13"],[2,2,"lanterna",45,"2026-10-10"],[3,8,"luvas de couro",89.9,"2026-10-12"],
+      [4,4,"lupa",120,"2026-10-09"],[5,3,"pincel",15.5,"2026-10-11"],[6,1,"café",7,"2026-10-14"]]}
   },
-  compras: {
-    cols:["id","pessoa_id","item","valor","dia"],
-    rows:[
-      [1,6,"luvas de látex",18.9,"2026-10-13"],[2,2,"lanterna",45,"2026-10-10"],
-      [3,8,"luvas de couro",89.9,"2026-10-12"],[4,4,"lupa",120,"2026-10-09"],
-      [5,3,"pincel",15.5,"2026-10-11"],[6,1,"café",7,"2026-10-14"]
-    ]
+  chips:["SELECT","*","FROM","WHERE","AND","LIKE '%%'","ORDER BY","DESC","COUNT(*)","GROUP BY","JOIN","ON","DISTINCT","AS"],
+  levels:[
+    {t:"Os suspeitos",c:"SELECT *",
+     story:"Bem-vindo, detetive. Antes de qualquer coisa, conheça todas as pessoas ligadas ao museu.",
+     task:"Mostre <b>todas as colunas</b> de <b>todas as pessoas</b> da tabela <code>pessoas</code>.",
+     hint:"<code>SELECT *</code> traz todas as colunas. Depois vem <code>FROM</code> e o nome da tabela.",
+     sol:"SELECT * FROM pessoas", start:"SELECT ", note:"Oito pessoas tinham acesso ao museu."},
+    {t:"Só o essencial",c:"SELECT colunas",
+     story:"A lista está grande demais para o quadro de cortiça. Você só precisa de nome e profissão.",
+     task:"Liste apenas as colunas <code>nome</code> e <code>profissao</code> da tabela <code>pessoas</code>.",
+     hint:"Separe as colunas por vírgula: <code>SELECT nome, profissao FROM ...</code>",
+     sol:"SELECT nome, profissao FROM pessoas", note:"Há um fotógrafo, um eletricista e um segurança na lista."},
+    {t:"Moradores locais",c:"WHERE",
+     story:"O ladrão parecia conhecer bem a cidade. Vale filtrar quem mora em Porto Claro.",
+     task:"Mostre todas as colunas das pessoas cuja <code>cidade</code> é <b>'Porto Claro'</b>.",
+     hint:"Use <code>WHERE cidade = 'Porto Claro'</code>. Textos vão entre aspas simples.",
+     sol:"SELECT * FROM pessoas WHERE cidade = 'Porto Claro'", note:"Quatro suspeitos moram em Porto Claro."},
+    {t:"A noite do crime",c:"WHERE + AND",
+     story:"O diamante sumiu no dia <b>2026-10-14</b>, depois das 22h. Quem ainda estava no museu?",
+     task:"Na tabela <code>visitas</code>, mostre todas as colunas das visitas do dia <b>'2026-10-14'</b> com <code>hora_saida</code> <b>maior que '22:00'</b>.",
+     hint:"Combine duas condições com <code>AND</code>: <code>WHERE dia = '...' AND hora_saida > '22:00'</code>",
+     sol:"SELECT * FROM visitas WHERE dia = '2026-10-14' AND hora_saida > '22:00'", note:"Três pessoas (ids 2, 6 e 8) saíram depois das 22h no dia do crime."},
+    {t:"Linha do tempo",c:"ORDER BY",
+     story:"Monte a linha do tempo das saídas no dia do crime, da última para a primeira.",
+     task:"Mostre <code>pessoa_id</code> e <code>hora_saida</code> das visitas do dia <b>'2026-10-14'</b>, ordenadas por <code>hora_saida</code> em ordem <b>decrescente</b>.",
+     hint:"No final da consulta: <code>ORDER BY hora_saida DESC</code>",
+     sol:"SELECT pessoa_id, hora_saida FROM visitas WHERE dia = '2026-10-14' ORDER BY hora_saida DESC", ordered:true, note:"O segurança (id 2) foi o último a sair, às 23:50."},
+    {t:"Palavras-chave",c:"LIKE",
+     story:"Testemunhas mencionaram uma câmera. Procure nos depoimentos.",
+     task:"Mostre todas as colunas dos <code>depoimentos</code> cujo <code>texto</code> contém a palavra <b>câmera</b>.",
+     hint:"<code>LIKE '%câmera%'</code> encontra o texto em qualquer posição. O <code>%</code> significa “qualquer coisa”.",
+     sol:"SELECT * FROM depoimentos WHERE texto LIKE '%câmera%'", note:"Alguém com uma bolsa de câmera saiu pelos fundos tarde da noite."},
+    {t:"Frequentadores",c:"COUNT + GROUP BY",
+     story:"Quem visita o museu com frequência conhece as rotinas. Conte as visitas de cada pessoa.",
+     task:"Mostre <code>pessoa_id</code> e a <b>quantidade de visitas</b> de cada pessoa na tabela <code>visitas</code>.",
+     hint:"<code>SELECT pessoa_id, COUNT(*) AS qtd FROM visitas GROUP BY pessoa_id</code> — o GROUP BY junta as linhas de cada pessoa.",
+     sol:"SELECT pessoa_id, COUNT(*) AS qtd FROM visitas GROUP BY pessoa_id", note:"Helena, Otávio e Rafael visitaram o museu duas vezes."},
+    {t:"Nomes no registro",c:"JOIN",
+     story:"Ids não dizem muito. Cruze as visitas com as pessoas para ver os nomes.",
+     task:"Mostre o <code>nome</code> da pessoa e a <code>hora_saida</code> de todas as visitas do dia <b>'2026-10-14'</b>.",
+     hint:"<code>FROM pessoas p JOIN visitas v ON p.id = v.pessoa_id</code> e depois <code>WHERE v.dia = '2026-10-14'</code>",
+     sol:"SELECT p.nome, v.hora_saida FROM pessoas p JOIN visitas v ON p.id = v.pessoa_id WHERE v.dia = '2026-10-14'", note:"Marcos, Rafael e Caio estavam no museu depois das 22h."},
+    {t:"Compras suspeitas",c:"JOIN + LIKE",
+     story:"A restauradora achou marcas de luvas na vitrine. Quem comprou luvas recentemente?",
+     task:"Mostre o <code>nome</code> da pessoa e o <code>item</code> de todas as <code>compras</code> cujo item contém <b>luvas</b>.",
+     hint:"Junte <code>pessoas</code> com <code>compras</code> pelo id da pessoa e filtre com <code>c.item LIKE '%luvas%'</code>.",
+     sol:"SELECT p.nome, c.item FROM pessoas p JOIN compras c ON p.id = c.pessoa_id WHERE c.item LIKE '%luvas%'", note:"Rafael comprou luvas de látex; Caio, luvas de couro."},
+    {t:"Fechando o cerco",c:"JOIN duplo",
+     story:"Hora de cruzar tudo: quem estava no museu depois das 22h no dia do crime <b>e</b> comprou luvas?",
+     task:"Mostre apenas o <code>nome</code> (sem repetições) das pessoas que saíram depois de <b>'22:00'</b> no dia <b>'2026-10-14'</b> e compraram algum item com <b>luvas</b>.",
+     hint:"Use dois JOINs: <code>pessoas p JOIN visitas v ON ... JOIN compras c ON ...</code>, três condições no WHERE e <code>SELECT DISTINCT p.nome</code>.",
+     sol:"SELECT DISTINCT p.nome FROM pessoas p JOIN visitas v ON p.id = v.pessoa_id JOIN compras c ON p.id = c.pessoa_id WHERE v.dia = '2026-10-14' AND v.hora_saida > '22:00' AND c.item LIKE '%luvas%'", note:"Restam dois suspeitos: Rafael Nunes e Caio Ferraz."}
+  ],
+  accuse:{
+    prompt:"Suas consultas reduziram a lista a dois nomes: <b>Rafael Nunes</b> e <b>Caio Ferraz</b>. Releia suas anotações — um depoimento descreve quem saiu pelos fundos. Quem levou o diamante?",
+    table:"pessoas", idCol:0, nameCol:1, sub:p=>`${p[4]}, ${p[3]}`, culprit:8,
+    wrong:"tem um álibi nas evidências. Releia as anotações e tente de novo.",
+    verdict:"Caio Ferraz, o fotógrafo, fotografou as câmeras de segurança na semana anterior, comprou luvas de couro, saiu às 23:15 no dia do crime e foi visto com uma bolsa de câmera pelos fundos. O diamante estava escondido nela.",
+    learned:"SELECT, WHERE, AND, ORDER BY, LIKE, COUNT, GROUP BY, JOIN e DISTINCT"
   }
 };
 
-const LEVELS = [
-  {t:"Os suspeitos",c:"SELECT *",
-   story:"Bem-vindo, detetive. Antes de qualquer coisa, conheça todas as pessoas ligadas ao museu.",
-   task:"Mostre <b>todas as colunas</b> de <b>todas as pessoas</b> da tabela <code>pessoas</code>.",
-   hint:"<code>SELECT *</code> traz todas as colunas. Depois vem <code>FROM</code> e o nome da tabela.",
-   sol:"SELECT * FROM pessoas", start:"SELECT ", note:"Oito pessoas tinham acesso ao museu."},
-  {t:"Só o essencial",c:"SELECT colunas",
-   story:"A lista está grande demais para o quadro de cortiça. Você só precisa de nome e profissão.",
-   task:"Liste apenas as colunas <code>nome</code> e <code>profissao</code> da tabela <code>pessoas</code>.",
-   hint:"Separe as colunas por vírgula: <code>SELECT nome, profissao FROM ...</code>",
-   sol:"SELECT nome, profissao FROM pessoas", note:"Há um fotógrafo, um eletricista e um segurança na lista."},
-  {t:"Moradores locais",c:"WHERE",
-   story:"O ladrão parecia conhecer bem a cidade. Vale filtrar quem mora em Porto Claro.",
-   task:"Mostre todas as colunas das pessoas cuja <code>cidade</code> é <b>'Porto Claro'</b>.",
-   hint:"Use <code>WHERE cidade = 'Porto Claro'</code>. Textos vão entre aspas simples.",
-   sol:"SELECT * FROM pessoas WHERE cidade = 'Porto Claro'", note:"Quatro suspeitos moram em Porto Claro."},
-  {t:"A noite do crime",c:"WHERE + AND",
-   story:"O diamante sumiu no dia <b>2026-10-14</b>, depois das 22h. Quem ainda estava no museu?",
-   task:"Na tabela <code>visitas</code>, mostre todas as colunas das visitas do dia <b>'2026-10-14'</b> com <code>hora_saida</code> <b>maior que '22:00'</b>.",
-   hint:"Combine duas condições com <code>AND</code>: <code>WHERE dia = '...' AND hora_saida > '22:00'</code>",
-   sol:"SELECT * FROM visitas WHERE dia = '2026-10-14' AND hora_saida > '22:00'", note:"Três pessoas (ids 2, 6 e 8) saíram depois das 22h no dia do crime."},
-  {t:"Linha do tempo",c:"ORDER BY",
-   story:"Monte a linha do tempo das saídas no dia do crime, da última para a primeira.",
-   task:"Mostre <code>pessoa_id</code> e <code>hora_saida</code> das visitas do dia <b>'2026-10-14'</b>, ordenadas por <code>hora_saida</code> em ordem <b>decrescente</b>.",
-   hint:"No final da consulta: <code>ORDER BY hora_saida DESC</code>",
-   sol:"SELECT pessoa_id, hora_saida FROM visitas WHERE dia = '2026-10-14' ORDER BY hora_saida DESC", ordered:true, note:"O segurança (id 2) foi o último a sair, às 23:50."},
-  {t:"Palavras-chave",c:"LIKE",
-   story:"Testemunhas mencionaram uma câmera. Procure nos depoimentos.",
-   task:"Mostre todas as colunas dos <code>depoimentos</code> cujo <code>texto</code> contém a palavra <b>câmera</b>.",
-   hint:"<code>LIKE '%câmera%'</code> encontra o texto em qualquer posição. O <code>%</code> significa “qualquer coisa”.",
-   sol:"SELECT * FROM depoimentos WHERE texto LIKE '%câmera%'", note:"Alguém com uma bolsa de câmera saiu pelos fundos tarde da noite."},
-  {t:"Frequentadores",c:"COUNT + GROUP BY",
-   story:"Quem visita o museu com frequência conhece as rotinas. Conte as visitas de cada pessoa.",
-   task:"Mostre <code>pessoa_id</code> e a <b>quantidade de visitas</b> de cada pessoa na tabela <code>visitas</code>.",
-   hint:"<code>SELECT pessoa_id, COUNT(*) AS qtd FROM visitas GROUP BY pessoa_id</code> — o GROUP BY junta as linhas de cada pessoa.",
-   sol:"SELECT pessoa_id, COUNT(*) AS qtd FROM visitas GROUP BY pessoa_id", note:"Helena, Otávio e Rafael visitaram o museu duas vezes."},
-  {t:"Nomes no registro",c:"JOIN",
-   story:"Ids não dizem muito. Cruze as visitas com as pessoas para ver os nomes.",
-   task:"Mostre o <code>nome</code> da pessoa e a <code>hora_saida</code> de todas as visitas do dia <b>'2026-10-14'</b>.",
-   hint:"<code>FROM pessoas p JOIN visitas v ON p.id = v.pessoa_id</code> e depois <code>WHERE v.dia = '2026-10-14'</code>",
-   sol:"SELECT p.nome, v.hora_saida FROM pessoas p JOIN visitas v ON p.id = v.pessoa_id WHERE v.dia = '2026-10-14'", note:"Marcos, Rafael e Caio estavam no museu depois das 22h."},
-  {t:"Compras suspeitas",c:"JOIN + LIKE",
-   story:"A restauradora achou marcas de luvas na vitrine. Quem comprou luvas recentemente?",
-   task:"Mostre o <code>nome</code> da pessoa e o <code>item</code> de todas as <code>compras</code> cujo item contém <b>luvas</b>.",
-   hint:"Junte <code>pessoas</code> com <code>compras</code> pelo id da pessoa e filtre com <code>c.item LIKE '%luvas%'</code>.",
-   sol:"SELECT p.nome, c.item FROM pessoas p JOIN compras c ON p.id = c.pessoa_id WHERE c.item LIKE '%luvas%'", note:"Rafael comprou luvas de látex; Caio, luvas de couro."},
-  {t:"Fechando o cerco",c:"JOIN duplo",
-   story:"Hora de cruzar tudo: quem estava no museu depois das 22h no dia do crime <b>e</b> comprou luvas?",
-   task:"Mostre apenas o <code>nome</code> (sem repetições) das pessoas que saíram depois de <b>'22:00'</b> no dia <b>'2026-10-14'</b> e compraram algum item com <b>luvas</b>.",
-   hint:"Use dois JOINs: <code>pessoas p JOIN visitas v ON ... JOIN compras c ON ...</code>, três condições no WHERE e <code>SELECT DISTINCT p.nome</code>.",
-   sol:"SELECT DISTINCT p.nome FROM pessoas p JOIN visitas v ON p.id = v.pessoa_id JOIN compras c ON p.id = c.pessoa_id WHERE v.dia = '2026-10-14' AND v.hora_saida > '22:00' AND c.item LIKE '%luvas%'", note:"Restam dois suspeitos: Rafael Nunes e Caio Ferraz."}
-];
-const CULPRIT = 8;
+// ===== Caso 2: Os pedidos fantasmas do EntregaJá =====
+const DT = (d,h)=>`2026-10-${d} ${h}:00`;
+const CASE2 = {
+  id:"caso2", key:"detetive-sql-caso2-v1",
+  title:"Os pedidos fantasmas do EntregaJá",
+  intro:"Alguém está criando pedidos falsos com cupons gigantes no EntregaJá. Siga o dinheiro, consulta por consulta.",
+  tables:{
+    clientes:{cols:["id_cliente INTEGER","nome TEXT","email TEXT","cidade TEXT","plano TEXT"], rows:[
+      [1,"Ana Beatriz Lopes","ana.lopes@mail.com","Porto Claro","Premium"],
+      [2,"Bruno Tavares","bruno.t@mail.com","Porto Claro","Grátis"],
+      [3,"Carla Menezes","carla.m@mail.com","Vila Serena","Premium"],
+      [4,"Paulo Dias","  DP.Entregas@mail.com","Porto Claro","Grátis"],
+      [5,"Pedro D.","dp.entregas@MAIL.com  ","Porto Claro","Grátis"],
+      [6,"Fernanda Rocha","fe.rocha@mail.com","Porto Claro","Premium"],
+      [7,"P. Duarte","Dp.Entregas@Mail.com","Porto Claro","Grátis"],
+      [8,"Gustavo Lima","gustavo.lima@mail.com","Vila Serena","Grátis"]]},
+    restaurantes:{cols:["id_restaurante INTEGER","nome TEXT","categoria TEXT","cidade TEXT","taxa_entrega REAL"], rows:[
+      [1,"Pizzaria Bella Notte","Pizza","Porto Claro",6],[2,"Sabor do Sertão","Nordestina","Porto Claro",0],
+      [3,"Sushi Kaze","Japonesa","Porto Claro",8.5],[4,"Doce Ponto","Doces","Porto Claro",4]]},
+    entregadores:{cols:["id_entregador INTEGER","nome TEXT","cidade TEXT","veiculo TEXT"], rows:[
+      [1,"Rui Campos","Porto Claro","moto"],[2,"Talita Nogueira","Porto Claro","bicicleta"],
+      [3,"Diego Paiva","Porto Claro","moto"],[4,"Lucas Amaral","Vila Serena","carro"],
+      [5,"Marta Souza","Vila Serena","moto"],[6,"Lia Fontes","Porto Claro","patinete"]]},
+    pedidos:{cols:["id_pedido INTEGER","id_cliente INTEGER","id_restaurante INTEGER","id_entregador INTEGER","data_hora_pedido TEXT","entregue_em TEXT","valor REAL","cupom INTEGER","status TEXT","forma_pagamento TEXT"], rows:[
+      [101,1,1,1,DT("01","19:10"),DT("01","19:48"),72,0,"Concluído","Cartão de Crédito"],
+      [102,2,3,2,DT("01","20:05"),DT("01","20:41"),95.5,10,"Concluído","PIX"],
+      [103,3,2,6,DT("02","12:30"),DT("02","12:34"),38,0,"Concluído","Dinheiro"],
+      [104,6,4,1,DT("03","15:20"),null,45,5,"Cancelado","Cartão de Crédito"],
+      [105,8,1,3,DT("03","21:00"),DT("03","21:35"),88,0,"Concluído","Cartão de Crédito"],
+      [106,1,3,6,DT("04","13:00"),DT("04","13:29"),110,50,"Concluído","Cartão de Crédito"],
+      [107,2,2,2,DT("05","19:45"),DT("05","20:20"),54,15,"Concluído","PIX"],
+      [108,3,1,1,DT("06","20:10"),null,66,0,"Cancelado","PIX"],
+      [109,6,3,6,DT("07","18:00"),DT("07","18:33"),120,20,"Concluído","PIX"],
+      [110,4,3,3,DT("08","02:10"),DT("08","02:12"),180,70,"Concluído","PIX"],
+      [111,5,3,3,DT("08","02:16"),DT("08","02:18"),165,65,"Concluído","PIX"],
+      [112,7,1,3,DT("08","02:23"),DT("08","02:25"),150,60,"Concluído","PIX"],
+      [113,4,3,3,DT("08","02:31"),DT("08","02:34"),172,55,"Concluído","Dinheiro"],
+      [114,8,4,2,DT("09","16:00"),DT("09","16:27"),32,0,"Concluído","Dinheiro"],
+      [115,2,4,1,DT("10","14:00"),DT("10","14:25"),28,0,"Concluído","Cartão de Crédito"]]}
+  },
+  chips:["SELECT","FROM","WHERE","AND","OR","NOT","( )","LIMIT","ORDER BY","DESC","ROUND( , 2)","IF( , , )","CASE WHEN THEN ELSE END","COALESCE( , )","LOWER(TRIM( ))","EXTRACT(HOUR FROM )","DATETIME_DIFF( , , MINUTE)","LEFT JOIN","IS NULL","GROUP BY","AVG()","SUM()","HAVING","WITH  AS ( )","RANK() OVER (ORDER BY  DESC)","LAG() OVER (ORDER BY )","SUM() OVER (ORDER BY )"],
+  levels:[
+    {t:"Cupons fora da curva",c:"ORDER BY + LIMIT",a:"Aula 11",
+     story:"O Financeiro do EntregaJá notou um rombo em descontos neste mês. Comece olhando os maiores cupons.",
+     task:"Mostre <code>id_pedido</code>, <code>cupom</code> e <code>valor</code> dos <b>5 pedidos com os maiores cupons</b>, do maior para o menor.",
+     hint:"Ordene com <code>ORDER BY cupom DESC</code> e corte com <code>LIMIT 5</code> no final.",
+     sol:"SELECT id_pedido, cupom, valor FROM pedidos ORDER BY cupom DESC LIMIT 5", ordered:true, start:"SELECT ",
+     note:"Os pedidos 110, 111, 112 e 113 têm cupons de 55% a 70%. Fora eles, só o 106 chega a 50%."},
+    {t:"Parênteses salvam",c:"AND + OR",a:"Aula 14",
+     story:"Golpistas evitam cartão, que deixa rastro com o banco. Filtre os cupons altos pagos de outro jeito.",
+     task:"Mostre <code>id_pedido</code>, <code>cupom</code> e <code>forma_pagamento</code> dos pedidos com <code>cupom</code> <b>maior ou igual a 50</b> e pagos com <b>'PIX'</b> <b>ou</b> <b>'Dinheiro'</b>.",
+     hint:"Sem parênteses, o AND é resolvido antes do OR e o filtro sai errado. Use <code>WHERE cupom >= 50 AND (forma_pagamento = 'PIX' OR forma_pagamento = 'Dinheiro')</code>.",
+     sol:"SELECT id_pedido, cupom, forma_pagamento FROM pedidos WHERE cupom >= 50 AND (forma_pagamento = 'PIX' OR forma_pagamento = 'Dinheiro')",
+     note:"Os quatro cupons gigantes (110 a 113) foram pagos com PIX ou dinheiro. O 106, pago com cartão, saiu da lista."},
+    {t:"Quanto saiu do caixa",c:"Aritmética + ROUND",a:"Aulas 14 e 16",
+     story:"Calcule quanto o cliente realmente pagou em cada pedido com cupom alto. O cupom é um percentual de desconto.",
+     task:"Para os pedidos com <code>cupom</code> <b>maior ou igual a 50</b>, mostre <code>id_pedido</code>, <code>valor</code>, <code>cupom</code> e uma coluna <code>valor_pago</code> = valor com o desconto aplicado, arredondado em <b>2 casas</b>.",
+     hint:"<code>ROUND(valor * (100 - cupom) / 100, 2) AS valor_pago</code>",
+     sol:"SELECT id_pedido, valor, cupom, ROUND(valor * (100 - cupom) / 100, 2) AS valor_pago FROM pedidos WHERE cupom >= 50",
+     note:"Nos pedidos 110 a 113, quem pediu pagou cerca de 37% do valor: R$ 249,15 por R$ 667 em sushi e pizza."},
+    {t:"Faixas de desconto",c:"CASE WHEN",a:"Aula 15",
+     story:"O time de BI quer um rótulo de desconto em cada pedido para enxergar a distribuição.",
+     task:"Mostre <code>id_pedido</code>, <code>cupom</code> e uma coluna <code>faixa_desconto</code> para <b>todos</b> os pedidos: cupom 0 → <b>'Sem desconto'</b>; até 20 → <b>'Desconto pequeno'</b>; acima de 20 → <b>'Desconto alto'</b>.",
+     hint:"<code>CASE WHEN cupom = 0 THEN 'Sem desconto' WHEN cupom <= 20 THEN 'Desconto pequeno' ELSE 'Desconto alto' END AS faixa_desconto</code>",
+     sol:"SELECT id_pedido, cupom, CASE WHEN cupom = 0 THEN 'Sem desconto' WHEN cupom <= 20 THEN 'Desconto pequeno' ELSE 'Desconto alto' END AS faixa_desconto FROM pedidos",
+     note:"Só 5 dos 15 pedidos têm desconto alto, e 4 deles são os suspeitos."},
+    {t:"Ficha de entrega",c:"IF + COALESCE",a:"Aula 15",
+     story:"Pedidos cancelados não têm horário de entrega (NULL). Monte uma ficha legível e marque os casos para investigar.",
+     task:"Mostre <code>id_pedido</code>, <code>status</code>, uma coluna <code>entrega</code> com <code>entregue_em</code> trocando NULL por <b>'não entregue'</b>, e uma coluna <code>alerta</code> que diz <b>'Investigar'</b> se o cupom for maior ou igual a 50 e <b>'Ok'</b> caso contrário.",
+     hint:"<code>COALESCE(entregue_em, 'não entregue') AS entrega</code> e <code>IF(cupom >= 50, 'Investigar', 'Ok') AS alerta</code>",
+     sol:"SELECT id_pedido, status, COALESCE(entregue_em, 'não entregue') AS entrega, IF(cupom >= 50, 'Investigar', 'Ok') AS alerta FROM pedidos",
+     note:"Os pedidos marcados para investigar foram todos concluídos: os cupons foram usados até o fim."},
+    {t:"E-mails disfarçados",c:"LOWER + TRIM",a:"Aula 18",
+     story:"Os pedidos 110 a 113 vieram dos clientes 4, 5 e 7. Os cadastros parecem diferentes — até você limpar o texto.",
+     task:"Mostre <code>id_cliente</code>, <code>nome</code> e uma coluna <code>email_limpo</code> com o e-mail sem espaços nas pontas e em letras minúsculas, para <b>todos</b> os clientes.",
+     hint:"Combine as duas funções: <code>LOWER(TRIM(email)) AS email_limpo</code>",
+     sol:"SELECT id_cliente, nome, LOWER(TRIM(email)) AS email_limpo FROM clientes",
+     note:"Paulo Dias, Pedro D. e P. Duarte são a mesma pessoa: os três usam dp.entregas@mail.com. “DP”…"},
+    {t:"Entregas-relâmpago",c:"EXTRACT + DATETIME_DIFF",a:"Aula 18",
+     story:"Sushi não atravessa a cidade em 2 minutos. Meça o tempo real de cada entrega e a hora do pedido.",
+     task:"Mostre <code>id_pedido</code>, <code>id_entregador</code>, a <code>hora</code> do pedido e os <code>minutos</code> entre <code>data_hora_pedido</code> e <code>entregue_em</code>, só dos pedidos entregues em <b>menos de 10 minutos</b>.",
+     hint:"<code>EXTRACT(HOUR FROM data_hora_pedido) AS hora</code> e <code>DATETIME_DIFF(entregue_em, data_hora_pedido, MINUTE) AS minutos</code>. No WHERE, repita o DATETIME_DIFF (o apelido ainda não existe ali).",
+     sol:"SELECT id_pedido, id_entregador, EXTRACT(HOUR FROM data_hora_pedido) AS hora, DATETIME_DIFF(entregue_em, data_hora_pedido, MINUTE) AS minutos FROM pedidos WHERE DATETIME_DIFF(entregue_em, data_hora_pedido, MINUTE) < 10",
+     note:"Quatro entregas de 2 a 3 minutos às 2h da manhã, todas do entregador 3. A entregadora 6 tem uma de 4 minutos, ao meio-dia."},
+    {t:"Quem não estava na rua",c:"LEFT JOIN + IS NULL",a:"Aula 19",
+     story:"Antes de acusar alguém, descarte quem não fez nenhuma entrega no período.",
+     task:"Mostre o <code>nome</code> dos entregadores que <b>não aparecem em nenhum pedido</b>.",
+     hint:"<code>FROM entregadores e LEFT JOIN pedidos p ON e.id_entregador = p.id_entregador WHERE p.id_pedido IS NULL</code>",
+     sol:"SELECT e.nome FROM entregadores e LEFT JOIN pedidos p ON e.id_entregador = p.id_entregador WHERE p.id_pedido IS NULL",
+     note:"Lucas Amaral e Marta Souza não fizeram entregas: estão descartados."},
+    {t:"O perfil de cada entregador",c:"GROUP BY + COUNT + AVG",a:"Aula 21",
+     story:"Resuma o comportamento de cada entregador em uma linha.",
+     task:"Mostre <code>id_entregador</code>, a quantidade de <code>pedidos</code> e o <code>cupom_medio</code> (média do cupom arredondada em <b>1 casa</b>) de cada entregador.",
+     hint:"<code>SELECT id_entregador, COUNT(*) AS pedidos, ROUND(AVG(cupom), 1) AS cupom_medio FROM pedidos GROUP BY id_entregador</code>",
+     sol:"SELECT id_entregador, COUNT(*) AS pedidos, ROUND(AVG(cupom), 1) AS cupom_medio FROM pedidos GROUP BY id_entregador",
+     note:"O entregador 3 tem cupom médio de 50%. Os demais ficam abaixo de 25%."},
+    {t:"Filtrando grupos",c:"HAVING",a:"Aula 21",
+     story:"Agora fique só com os entregadores cujos pedidos têm cupom médio acima do normal.",
+     task:"Mostre <code>id_entregador</code> e o <code>cupom_medio</code> (1 casa) apenas dos entregadores com cupom médio <b>maior que 20</b>.",
+     hint:"O WHERE não enxerga agregações. Depois do GROUP BY, use <code>HAVING AVG(cupom) > 20</code>.",
+     sol:"SELECT id_entregador, ROUND(AVG(cupom), 1) AS cupom_medio FROM pedidos GROUP BY id_entregador HAVING AVG(cupom) > 20",
+     note:"Sobram dois: o entregador 3 (Diego Paiva) e a 6 (Lia Fontes)."},
+    {t:"Acima da média",c:"Subquery no WHERE",a:"Aula 23",
+     story:"Compare cada pedido com o cupom médio da plataforma inteira, sem digitar o número na mão.",
+     task:"Mostre <code>id_pedido</code>, <code>id_cliente</code> e <code>cupom</code> dos pedidos com cupom <b>acima da média geral</b> de cupom.",
+     hint:"<code>WHERE cupom > (SELECT AVG(cupom) FROM pedidos)</code> — a subquery roda primeiro e devolve um único número.",
+     sol:"SELECT id_pedido, id_cliente, cupom FROM pedidos WHERE cupom > (SELECT AVG(cupom) FROM pedidos)",
+     note:"A média geral é 23,3%. Acima dela: o 106 (Ana Beatriz, promoção legítima) e os quatro pedidos das contas dp.entregas."},
+    {t:"Contando relâmpagos",c:"CTE (WITH)",a:"Aula 23",
+     story:"Organize o raciocínio em duas etapas: primeiro calcule os minutos de cada entrega, depois conte as rápidas demais.",
+     task:"Usando uma CTE, mostre <code>id_entregador</code> e a quantidade de entregas <b>concluídas</b> feitas em <b>menos de 10 minutos</b> (coluna <code>relampago</code>).",
+     hint:"<code>WITH entregas AS (SELECT id_entregador, DATETIME_DIFF(entregue_em, data_hora_pedido, MINUTE) AS minutos FROM pedidos WHERE status = 'Concluído')</code> e depois <code>SELECT id_entregador, COUNT(*) AS relampago FROM entregas WHERE minutos < 10 GROUP BY id_entregador</code>",
+     sol:"WITH entregas AS (SELECT id_entregador, DATETIME_DIFF(entregue_em, data_hora_pedido, MINUTE) AS minutos FROM pedidos WHERE status = 'Concluído') SELECT id_entregador, COUNT(*) AS relampago FROM entregas WHERE minutos < 10 GROUP BY id_entregador",
+     note:"Diego tem 4 entregas-relâmpago. Lia tem uma só: um prato nordestino de um restaurante a duas quadras, ao meio-dia."},
+    {t:"Ranking do prejuízo",c:"RANK() OVER",a:"Aulas 26 e 27",
+     story:"Quanto cada entregador custou em descontos? Monte o ranking.",
+     task:"Mostre <code>id_entregador</code>, o <code>desconto_total</code> em reais (soma de valor × cupom / 100, arredondada em <b>2 casas</b>) e a <code>posicao</code> no ranking, do maior desconto para o menor.",
+     hint:"Agrupe por entregador e, na mesma consulta, use <code>RANK() OVER (ORDER BY SUM(valor * cupom / 100) DESC) AS posicao</code>.",
+     sol:"SELECT id_entregador, ROUND(SUM(valor * cupom / 100), 2) AS desconto_total, RANK() OVER (ORDER BY SUM(valor * cupom / 100) DESC) AS posicao FROM pedidos GROUP BY id_entregador",
+     note:"Diego lidera com R$ 417,85 em descontos, mais de 5 vezes a Lia (R$ 79,00)."},
+    {t:"Um pedido atrás do outro",c:"LAG() OVER",a:"Aula 28",
+     story:"Veja o ritmo dos pedidos de Diego Paiva comparando cada um com o anterior.",
+     task:"Para os pedidos do <b>entregador 3</b>, mostre <code>id_pedido</code>, <code>data_hora_pedido</code> e uma coluna <code>pedido_anterior</code> com o horário do pedido anterior dele.",
+     hint:"<code>LAG(data_hora_pedido) OVER (ORDER BY data_hora_pedido) AS pedido_anterior</code>, com <code>WHERE id_entregador = 3</code>.",
+     sol:"SELECT id_pedido, data_hora_pedido, LAG(data_hora_pedido) OVER (ORDER BY data_hora_pedido) AS pedido_anterior FROM pedidos WHERE id_entregador = 3",
+     note:"Na madrugada de 8 de outubro, um pedido novo surgia a cada 6 a 8 minutos — sempre logo depois de o anterior ser “entregue”."},
+    {t:"O rombo acumulado",c:"SUM() OVER",a:"Aula 29",
+     story:"Última peça: quanto o prejuízo de Diego cresceu, pedido a pedido.",
+     task:"Para os pedidos do <b>entregador 3</b>, mostre <code>id_pedido</code>, o <code>desconto</code> do pedido (valor × cupom / 100, 2 casas) e o <code>acumulado</code> desses descontos em ordem de <code>data_hora_pedido</code> (2 casas).",
+     hint:"<code>ROUND(SUM(valor * cupom / 100) OVER (ORDER BY data_hora_pedido), 2) AS acumulado</code>",
+     sol:"SELECT id_pedido, ROUND(valor * cupom / 100, 2) AS desconto, ROUND(SUM(valor * cupom / 100) OVER (ORDER BY data_hora_pedido), 2) AS acumulado FROM pedidos WHERE id_entregador = 3",
+     note:"Em 24 minutos de madrugada, o prejuízo saltou de zero para R$ 417,85."}
+  ],
+  accuse:{
+    prompt:"Duas contas de entregador ficaram sob suspeita: <b>Diego Paiva</b> e <b>Lia Fontes</b>. Releia as anotações — e-mails, horários e o ritmo dos pedidos. Quem criou os pedidos fantasmas?",
+    table:"entregadores", idCol:0, nameCol:1, sub:p=>`${p[3]}, ${p[2]}`, culprit:3,
+    wrongById:{
+      1:"tem cupom médio de 1,3% e nenhuma entrega suspeita.",
+      2:"tem cupons pequenos e entregas em tempo normal.",
+      4:"não fez nenhuma entrega no período.",
+      5:"não fez nenhuma entrega no período.",
+      6:"teve uma entrega rápida legítima ao meio-dia e um cupom de promoção pago com cartão. Nada de madrugada."
+    },
+    verdict:"Diego Paiva criou três contas com o mesmo e-mail (dp.entregas@mail.com), fez quatro pedidos caros com cupons de 55% a 70% na madrugada de 8 de outubro, pagou com PIX e dinheiro e marcou cada um como entregue em 2 ou 3 minutos. O EntregaJá perdeu R$ 417,85 em 24 minutos.",
+    learned:"LIMIT, AND/OR com parênteses, aritmética, ROUND, CASE, IF, COALESCE, LOWER, TRIM, EXTRACT, DATETIME_DIFF, LEFT JOIN, GROUP BY, AVG, HAVING, subquery, CTE, RANK, LAG e SUM com OVER"
+  }
+};
 
-const KEY = "detetive-sql-v1";
-let state = {current:0, solved:[], hints:[], xp:0, closed:false};
-try { const s = localStorage.getItem(KEY); if (s) state = Object.assign(state, JSON.parse(s)); } catch(e){}
-function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
+// ===== Caso 3: O pódio adulterado (window functions) =====
+const PLACAR = (() => {
+  const d = { // entregas/pontos por dia (1..6)
+    1:[[8,80],[7,72],[9,88],[8,80],[7,70],[8,80]],
+    2:[[6,62],[8,80],[7,70],[9,90],[8,78],[9,90]],
+    3:[[9,92],[9,90],[8,82],[9,88],[10,100],[9,90]],
+    4:[[5,50],[6,58],[5,52],[6,60],[4,180],[3,210]],
+    5:[[7,70],[6,60],[8,80],[7,70],[7,72],[8,78]]
+  };
+  const rows = [];
+  for (let dia = 1; dia <= 6; dia++) for (let e = 1; e <= 5; e++)
+    rows.push([(dia-1)*5+e, e, `2026-10-0${dia}`, d[e][dia-1][0], d[e][dia-1][1]]);
+  return rows;
+})();
+const CASE3 = {
+  id:"caso3", key:"detetive-sql-caso3-v1",
+  title:"O pódio adulterado",
+  intro:"A Corrida de Outubro do EntregaJá dá uma moto ao entregador com mais pontos. O placar parece ter sido mexido. Investigue sem perder nenhuma linha de vista.",
+  tables:{
+    entregadores:{cols:["id_entregador INTEGER","nome TEXT","cidade TEXT","veiculo TEXT"], rows:[
+      [1,"Rui Campos","Porto Claro","moto"],[2,"Talita Nogueira","Porto Claro","bicicleta"],
+      [3,"Bruna Vasconcelos","Vila Serena","moto"],[4,"Otto Ribeiro","Porto Claro","moto"],
+      [5,"Lia Fontes","Porto Claro","patinete"]]},
+    placar:{cols:["id_registro INTEGER","id_entregador INTEGER","dia TEXT","entregas INTEGER","pontos REAL"], rows:PLACAR}
+  },
+  chips:["SELECT","FROM","WHERE","IN ( )","GROUP BY","ORDER BY","DESC","OVER ()","OVER (PARTITION BY )","OVER (PARTITION BY  ORDER BY )","ROW_NUMBER()","RANK()","DENSE_RANK()","LAG()","LEAD()","SUM()","AVG()","ROWS BETWEEN 2 PRECEDING AND CURRENT ROW","ROUND( , 1)","WITH  AS ( )"],
+  levels:[
+    {t:"O placar inteiro",c:"OVER ()",a:"Aula 26",
+     story:"A tabela <code>placar</code> tem uma linha por entregador por dia. Comece vendo cada linha ao lado do total de pontos da corrida — sem agrupar nada.",
+     task:"Mostre <code>id_entregador</code>, <code>dia</code>, <code>pontos</code> e uma coluna <code>total_geral</code> com a soma de todos os pontos da tabela, repetida em cada linha.",
+     hint:"<code>SUM(pontos) OVER () AS total_geral</code> — o <code>OVER ()</code> vazio faz da tabela inteira uma única janela.",
+     sol:"SELECT id_entregador, dia, pontos, SUM(pontos) OVER () AS total_geral FROM placar", start:"SELECT ",
+     note:"Foram 2.522 pontos distribuídos em 30 registros. Com OVER, as 30 linhas continuam ali."},
+    {t:"Uma janela por entregador",c:"PARTITION BY",a:"Aulas 26 e 29",
+     story:"Agora quebre a janela por entregador: cada um vira uma mini-tabela.",
+     task:"Mostre <code>id_entregador</code>, <code>dia</code>, <code>pontos</code> e uma coluna <code>total_entregador</code> com o total de pontos <b>daquele entregador</b>, em cada linha.",
+     hint:"<code>SUM(pontos) OVER (PARTITION BY id_entregador) AS total_entregador</code>",
+     sol:"SELECT id_entregador, dia, pontos, SUM(pontos) OVER (PARTITION BY id_entregador) AS total_entregador FROM placar",
+     note:"Otto Ribeiro (4) lidera com 610 pontos. Bruna Vasconcelos (3) vem atrás, com 542."},
+    {t:"Os dias de cada um",c:"ROW_NUMBER()",a:"Aula 27",
+     story:"Numere os dias de cada entregador do melhor para o pior, para achar o dia de pico de cada um.",
+     task:"Mostre <code>id_entregador</code>, <code>dia</code>, <code>pontos</code> e uma coluna <code>ordem</code> que numere os dias de <b>cada entregador</b> do maior para o menor número de pontos (em empate, o dia mais recente vem primeiro).",
+     hint:"<code>ROW_NUMBER() OVER (PARTITION BY id_entregador ORDER BY pontos DESC, dia DESC) AS ordem</code>",
+     sol:"SELECT id_entregador, dia, pontos, ROW_NUMBER() OVER (PARTITION BY id_entregador ORDER BY pontos DESC, dia DESC) AS ordem FROM placar",
+     note:"Cada entregador tem os dias numerados de 1 a 6. O ROW_NUMBER nunca repete número, mesmo em empate."},
+    {t:"O melhor dia",c:"ROW_NUMBER() + CTE",a:"Aulas 23 e 27",
+     story:"Uma window function não pode ir no WHERE. Para ficar só com o dia nº 1 de cada entregador, calcule a numeração numa CTE e filtre depois.",
+     task:"Mostre <code>id_entregador</code>, <code>dia</code> e <code>pontos</code> apenas do <b>melhor dia</b> de cada entregador (mesmo critério da fase anterior).",
+     hint:"<code>WITH dias AS (SELECT id_entregador, dia, pontos, ROW_NUMBER() OVER (PARTITION BY id_entregador ORDER BY pontos DESC, dia DESC) AS ordem FROM placar) SELECT id_entregador, dia, pontos FROM dias WHERE ordem = 1</code>",
+     sol:"WITH dias AS (SELECT id_entregador, dia, pontos, ROW_NUMBER() OVER (PARTITION BY id_entregador ORDER BY pontos DESC, dia DESC) AS ordem FROM placar) SELECT id_entregador, dia, pontos FROM dias WHERE ordem = 1",
+     note:"O melhor dia de todo mundo fica entre 80 e 100 pontos. O de Otto foi 210, no dia 6."},
+    {t:"O pódio publicado",c:"RANK()",a:"Aula 27",
+     story:"Reproduza o ranking que o EntregaJá publicou.",
+     task:"Mostre <code>id_entregador</code>, o <code>total</code> de pontos e a <code>posicao</code> no ranking com <b>RANK</b>, do maior total para o menor.",
+     hint:"Agrupe por entregador e use <code>RANK() OVER (ORDER BY SUM(pontos) DESC) AS posicao</code>.",
+     sol:"SELECT id_entregador, SUM(pontos) AS total, RANK() OVER (ORDER BY SUM(pontos) DESC) AS posicao FROM placar GROUP BY id_entregador",
+     note:"Pódio publicado: Otto 1º, Bruna 2º, Rui e Talita empatados em 3º com 470. Lia aparece em 5º — o RANK pulou o 4º."},
+    {t:"Empate sem buraco",c:"RANK × DENSE_RANK",a:"Aula 27",
+     story:"A Lia reclamou: “se houve empate em 3º, eu sou a 4ª, não a 5ª”. Mostre as duas contas lado a lado.",
+     task:"Mostre <code>id_entregador</code>, <code>total</code>, uma coluna <code>pos_rank</code> com RANK e uma coluna <code>pos_dense</code> com DENSE_RANK, ambas pelo total de pontos decrescente.",
+     hint:"Mesma janela nas duas: <code>RANK() OVER (ORDER BY SUM(pontos) DESC)</code> e <code>DENSE_RANK() OVER (ORDER BY SUM(pontos) DESC)</code>.",
+     sol:"SELECT id_entregador, SUM(pontos) AS total, RANK() OVER (ORDER BY SUM(pontos) DESC) AS pos_rank, DENSE_RANK() OVER (ORDER BY SUM(pontos) DESC) AS pos_dense FROM placar GROUP BY id_entregador",
+     note:"Com DENSE_RANK a Lia é 4ª: o empate não deixa buraco. Ela tem razão — mas o problema maior está no topo."},
+    {t:"Saltos de um dia para o outro",c:"LAG()",a:"Aula 28",
+     story:"Ninguém dobra os pontos de um dia para o outro sem motivo. Compare cada dia com o dia anterior do mesmo entregador.",
+     task:"Mostre <code>id_entregador</code>, <code>dia</code>, <code>pontos</code> e uma coluna <code>variacao</code> = pontos do dia menos os pontos do dia anterior <b>do mesmo entregador</b>.",
+     hint:"<code>pontos - LAG(pontos) OVER (PARTITION BY id_entregador ORDER BY dia) AS variacao</code>. O primeiro dia de cada um fica NULL, porque não há dia anterior.",
+     sol:"SELECT id_entregador, dia, pontos, pontos - LAG(pontos) OVER (PARTITION BY id_entregador ORDER BY dia) AS variacao FROM placar",
+     note:"As variações normais ficam entre −20 e +20. Otto saltou +120 no dia 5 e mais +30 no dia 6."},
+    {t:"Menos entregas, mais pontos",c:"LEAD()",a:"Aula 28",
+     story:"Se os pontos subiram, as entregas deveriam subir junto. Olhe para o dia seguinte de cada entregador.",
+     task:"Mostre <code>id_entregador</code>, <code>dia</code>, <code>entregas</code> e uma coluna <code>entregas_dia_seguinte</code> com as entregas do <b>próximo dia</b> do mesmo entregador.",
+     hint:"<code>LEAD(entregas) OVER (PARTITION BY id_entregador ORDER BY dia) AS entregas_dia_seguinte</code>. O último dia fica NULL.",
+     sol:"SELECT id_entregador, dia, entregas, LEAD(entregas) OVER (PARTITION BY id_entregador ORDER BY dia) AS entregas_dia_seguinte FROM placar",
+     note:"As entregas de Otto caíram de 6 para 4 e depois para 3 — justamente nos dias em que os pontos dele explodiram."},
+    {t:"A ultrapassagem",c:"SUM() OVER (ORDER BY)",a:"Aula 29",
+     story:"Acompanhe o acumulado de pontos de Bruna e Otto, dia a dia, para ver quando ele passou à frente.",
+     task:"Para os entregadores <b>3 e 4</b>, mostre <code>id_entregador</code>, <code>dia</code>, <code>pontos</code> e o <code>acumulado</code> de pontos de cada um até aquele dia.",
+     hint:"<code>SUM(pontos) OVER (PARTITION BY id_entregador ORDER BY dia) AS acumulado</code> com <code>WHERE id_entregador IN (3, 4)</code>.",
+     sol:"SELECT id_entregador, dia, pontos, SUM(pontos) OVER (PARTITION BY id_entregador ORDER BY dia) AS acumulado FROM placar WHERE id_entregador IN (3, 4)",
+     note:"No fim do dia 4, Bruna tinha 352 e Otto 220. Em dois dias ele tirou 132 pontos de diferença e passou à frente."},
+    {t:"A média que desliza",c:"ROWS BETWEEN",a:"Aula 29",
+     story:"Uma média móvel suaviza dias bons e ruins. Se ainda assim ela dispara, o salto é real.",
+     task:"Para o <b>entregador 4</b>, mostre <code>dia</code>, <code>pontos</code> e a <code>media_movel</code> dos pontos dos <b>últimos 3 dias</b> (o dia atual e os 2 anteriores), arredondada em 1 casa.",
+     hint:"<code>ROUND(AVG(pontos) OVER (ORDER BY dia ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 1) AS media_movel</code>",
+     sol:"SELECT dia, pontos, ROUND(AVG(pontos) OVER (ORDER BY dia ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 1) AS media_movel FROM placar WHERE id_entregador = 4",
+     note:"A média móvel de Otto passou quatro dias perto de 55 e saltou para 97,3 e depois 150."},
+    {t:"Pontos por entrega",c:"AVG() OVER () + CTE",a:"Aulas 26 e 29",
+     story:"Cada entrega vale, em média, cerca de 10 pontos. Encontre os registros fora da curva — lembrando que a janela precisa ser calculada antes de filtrar.",
+     task:"Mostre <code>id_entregador</code>, <code>dia</code> e <code>pontos_por_entrega</code> (pontos ÷ entregas, 1 casa) apenas dos registros em que esse valor é <b>maior que o dobro da média geral</b> de pontos por entrega.",
+     hint:"<code>WITH taxa AS (SELECT id_entregador, dia, pontos / entregas AS ppe, AVG(pontos / entregas) OVER () AS media FROM placar)</code> e depois <code>SELECT id_entregador, dia, ROUND(ppe, 1) AS pontos_por_entrega FROM taxa WHERE ppe > 2 * media</code>",
+     sol:"WITH taxa AS (SELECT id_entregador, dia, pontos / entregas AS ppe, AVG(pontos / entregas) OVER () AS media FROM placar) SELECT id_entregador, dia, ROUND(ppe, 1) AS pontos_por_entrega FROM taxa WHERE ppe > 2 * media",
+     note:"Só dois registros: Otto no dia 5 (45 pontos por entrega) e no dia 6 (70). Todo o resto fica perto de 10."},
+    {t:"O pódio limpo",c:"DENSE_RANK() + CTE",a:"Aulas 23 e 27",
+     story:"Refaça o ranking descartando os registros impossíveis: mais de 20 pontos por entrega.",
+     task:"Usando uma CTE com os registros em que <code>pontos</code> é <b>menor ou igual a entregas × 20</b>, mostre <code>id_entregador</code>, o <code>total</code> e a <code>posicao</code> com <b>DENSE_RANK</b>, do maior total para o menor.",
+     hint:"<code>WITH limpo AS (SELECT * FROM placar WHERE pontos <= entregas * 20)</code> e depois <code>SELECT id_entregador, SUM(pontos) AS total, DENSE_RANK() OVER (ORDER BY SUM(pontos) DESC) AS posicao FROM limpo GROUP BY id_entregador</code>",
+     sol:"WITH limpo AS (SELECT * FROM placar WHERE pontos <= entregas * 20) SELECT id_entregador, SUM(pontos) AS total, DENSE_RANK() OVER (ORDER BY SUM(pontos) DESC) AS posicao FROM limpo GROUP BY id_entregador",
+     note:"Sem os dois registros adulterados, o ranking muda: um novo 1º lugar, Rui e Talita empatados em 2º, Lia em 3º e Otto em último, com 220."}
+  ],
+  accuse:{
+    heading:"O veredito",
+    prompt:"O pódio publicado dava a moto a <b>Otto Ribeiro</b>. Com o placar limpo, quem é o verdadeiro campeão da Corrida de Outubro?",
+    table:"entregadores", idCol:0, nameCol:1, sub:p=>`${p[3]}, ${p[2]}`, culprit:3,
+    wrongById:{
+      1:"empatou em 2º no ranking limpo, com 470 pontos.",
+      2:"empatou em 2º no ranking limpo, com 470 pontos.",
+      4:"teve os pontos dos dias 5 e 6 inflados: 45 e 70 pontos por entrega, contra cerca de 10 de todo mundo.",
+      5:"ficou em 3º no ranking limpo, com 430 pontos."
+    },
+    stamp:"Campeã confirmada",
+    verdict:"Bruna Vasconcelos é a campeã, com 542 pontos. Nos dias 5 e 6, os registros de Otto Ribeiro foram editados: ele fez só 7 entregas e recebeu 390 pontos. Sem esses dois registros, Otto cai para último, com 220.",
+    learned:"OVER, PARTITION BY, ROW_NUMBER, RANK, DENSE_RANK, LAG, LEAD, SUM e AVG em janela, ROWS BETWEEN e CTEs para filtrar o resultado de uma janela"
+  }
+};
 
-function makeDb(){
-  const db = new alasql.Database();
-  for (const [name, t] of Object.entries(DATA)){
-    db.exec(`CREATE TABLE ${name} (${t.cols.join(",")})`);
-    db.tables[name].data = t.rows.map(r => Object.fromEntries(t.cols.map((c,i)=>[c,r[i]])));
+// ===== Caso 4: O restaurante que não existe =====
+const CASE4 = {
+  id:"caso4", key:"detetive-sql-caso4-v1",
+  title:"O restaurante que não existe",
+  intro:"O EntregaJá repassou mais dinheiro aos restaurantes do que recebeu em pedidos. Limpe os cadastros, cruze as datas e siga os repasses.",
+  tables:{
+    funcionarios:{cols:["id_funcionario INTEGER","nome TEXT","login TEXT","area TEXT"], rows:[
+      [1,"Renata Alves","renata.alves","Parcerias"],[2,"Igor Matos","igor.matos","Parcerias"],
+      [3,"Sílvia Prado","silvia.prado","Financeiro"],[4,"Caio Bertoni","caio.bertoni","Suporte"]]},
+    restaurantes:{cols:["id_restaurante INTEGER","nome TEXT","categoria TEXT","cnpj TEXT","telefone TEXT","chave_pix TEXT","cadastrado_em TEXT","cadastrado_por TEXT"], rows:[
+      [1,"Pizzaria Bella Notte","Pizza","12.345.678/0001-01","(21) 3344-1010","financeiro@bellanotte.com.br","2025-03-10 10:00:00","renata.alves"],
+      [2,"Sabor do Sertão","Nordestina","23.456.789/0001-02","(21) 3344-2020","contato@sabordosertao.com.br","2025-05-22 14:30:00","renata.alves"],
+      [3,"Sushi Kaze","Japonesa","34.567.890/0001-03","(21) 3344-3030","financeiro@sushikaze.com.br","2025-08-01 09:15:00","renata.alves"],
+      [4,"Doce Ponto","Doces","45.678.901/0001-04","(21) 3344-4040","pix@doceponto.com.br","2025-11-03 16:45:00","igor.matos"],
+      [5,"  sushi  KAZE ","Japonesa",null,"21 3344.3030","repasse.sk@gmail.com","2026-10-03 23:52:00","igor.matos"],
+      [6,"Bistrô Jardim","Francesa","56.789.012/0001-06","(21) 3344-6060","caixa@bistrojardim.com.br","2026-02-14 11:20:00","renata.alves"]]},
+    pedidos:{cols:["id_pedido INTEGER","id_restaurante INTEGER","data_pedido TEXT","valor REAL","status TEXT"], rows:[
+      [201,1,"2026-09-05",80,"Concluído"],[202,3,"2026-09-12",120,"Concluído"],[203,2,"2026-09-20",45,"Concluído"],
+      [204,6,"2026-09-28",150,"Concluído"],[205,3,"2026-10-02",95,"Concluído"],[206,4,"2026-10-04",38,"Concluído"],
+      [207,1,"2026-10-08",64,"Cancelado"],[208,3,"2026-10-11",110,"Concluído"],[209,6,"2026-10-15",132,"Concluído"],
+      [210,2,"2026-10-18",52,"Concluído"],[211,4,"2026-10-19",41,"Concluído"]]},
+    repasses:{cols:["id_repasse INTEGER","id_pedido INTEGER","id_restaurante INTEGER","valor_repasse REAL","pago_em TEXT"], rows:[
+      [301,201,1,70.40,"2026-09-12"],[302,202,3,105.60,"2026-09-19"],[303,203,2,39.60,"2026-09-27"],
+      [304,204,6,132.00,"2026-10-05"],[305,205,3,83.60,"2026-10-09"],[306,206,4,33.44,"2026-10-11"],
+      [307,208,3,96.80,"2026-10-18"],[308,209,6,116.16,"2026-10-20"],
+      [309,9001,5,480.00,"2026-10-06"],[310,9002,5,515.50,"2026-10-10"],[311,9003,5,620.00,"2026-10-14"],[312,9004,5,705.25,"2026-10-19"]]}
+  },
+  chips:["SELECT","DISTINCT","FROM","WHERE","AND","NOT","!=","IN ( )","IS NULL","ORDER BY","DESC","LIMIT","GROUP BY","HAVING","COUNT(DISTINCT )","MIN()","MAX()","SUM()","AVG()","ROUND( , 2)","UPPER()","TRIM()","REPLACE( , '  ', ' ')","LENGTH()","INITCAP()","SUBSTR( , 1, )","STRPOS( , '.')","SPLIT( , '@')[SAFE_OFFSET(1)]","REGEXP_REPLACE( , r'[^0-9]', '')","FORMAT_DATE('%A', )","EXTRACT(HOUR FROM )","DATE( )","DATE_ADD( , INTERVAL 30 DAY)","DATE_DIFF( , , DAY)","DATE_TRUNC( , MONTH)","RIGHT JOIN","FULL JOIN","ON","OVER (PARTITION BY )"],
+  levels:[
+    {t:"Que tipo de comida?",c:"DISTINCT + ORDER BY + LIMIT",a:"Aulas 11 e 12",
+     story:"Comece pelo cadastro de restaurantes. Quais categorias existem na plataforma?",
+     task:"Mostre as <code>categoria</code>s dos restaurantes <b>sem repetição</b>, em ordem alfabética <b>decrescente</b> (Z→A), limitando a <b>3</b> linhas.",
+     hint:"<code>SELECT DISTINCT categoria FROM restaurantes ORDER BY categoria DESC LIMIT 3</code>",
+     sol:"SELECT DISTINCT categoria FROM restaurantes ORDER BY categoria DESC LIMIT 3", ordered:true, start:"SELECT ",
+     note:"Pizza, Nordestina e Japonesa. O DISTINCT esconde um detalhe: “Japonesa” aparece em dois cadastros."},
+    {t:"Lado a lado",c:"ORDER BY com duas colunas",a:"Aula 12",
+     story:"Liste os restaurantes agrupados visualmente por categoria para comparar os nomes.",
+     task:"Mostre <code>categoria</code> e <code>nome</code> de todos os restaurantes, ordenados <b>por categoria</b> e, dentro de cada categoria, <b>por nome</b>.",
+     hint:"<code>ORDER BY categoria, nome</code> — a segunda coluna só desempata a primeira.",
+     sol:"SELECT categoria, nome FROM restaurantes ORDER BY categoria, nome", ordered:true,
+     note:"Na categoria Japonesa há o “Sushi Kaze” e um “  sushi  KAZE ” cheio de espaços sobrando."},
+    {t:"Espaços invisíveis",c:"LENGTH + TRIM + !=",a:"Aulas 14 e 18",
+     story:"Espaços nas pontas não aparecem a olho nu, mas mudam o tamanho do texto.",
+     task:"Mostre <code>id_restaurante</code>, <code>nome</code>, o <code>tamanho</code> do nome e o <code>tamanho_limpo</code> (sem espaços nas pontas), só dos restaurantes em que os dois tamanhos são <b>diferentes</b>.",
+     hint:"<code>LENGTH(nome) AS tamanho, LENGTH(TRIM(nome)) AS tamanho_limpo</code> e <code>WHERE LENGTH(nome) != LENGTH(TRIM(nome))</code>. LTRIM e RTRIM limpam só a esquerda ou só a direita.",
+     sol:"SELECT id_restaurante, nome, LENGTH(nome) AS tamanho, LENGTH(TRIM(nome)) AS tamanho_limpo FROM restaurantes WHERE LENGTH(nome) != LENGTH(TRIM(nome))",
+     note:"Só o cadastro 5 tem espaços sobrando: 14 caracteres, 11 depois do TRIM."},
+    {t:"O mesmo nome",c:"UPPER + TRIM + REPLACE + HAVING",a:"Aulas 18 e 21",
+     story:"Padronize os nomes e veja se algum restaurante foi cadastrado duas vezes. Atenção: o TRIM não tira o espaço duplo do meio.",
+     task:"Mostre o <code>nome_padrao</code> (espaços duplos trocados por um, sem espaços nas pontas, em maiúsculas) e a quantidade de <code>cadastros</code>, só dos nomes que aparecem <b>mais de uma vez</b>.",
+     hint:"<code>UPPER(TRIM(REPLACE(nome, '  ', ' '))) AS nome_padrao</code>, <code>GROUP BY nome_padrao</code> e <code>HAVING COUNT(*) > 1</code>.",
+     sol:"SELECT UPPER(TRIM(REPLACE(nome, '  ', ' '))) AS nome_padrao, COUNT(*) AS cadastros FROM restaurantes GROUP BY nome_padrao HAVING COUNT(*) > 1",
+     note:"“SUSHI KAZE” tem dois cadastros: o 3 e o 5."},
+    {t:"Contar de três jeitos",c:"COUNT(*) × COUNT(coluna) × COUNT(DISTINCT)",a:"Aula 21",
+     story:"Quantos cadastros existem, quantos têm CNPJ e quantos restaurantes de verdade há por trás deles?",
+     task:"Numa só linha, mostre <code>cadastros</code> (todas as linhas), <code>com_cnpj</code> (cadastros com CNPJ preenchido) e <code>restaurantes_reais</code> (nomes padronizados distintos, como na fase anterior).",
+     hint:"<code>COUNT(*)</code> conta linhas, <code>COUNT(cnpj)</code> ignora NULL e <code>COUNT(DISTINCT UPPER(TRIM(REPLACE(nome, '  ', ' '))))</code> conta nomes diferentes.",
+     sol:"SELECT COUNT(*) AS cadastros, COUNT(cnpj) AS com_cnpj, COUNT(DISTINCT UPPER(TRIM(REPLACE(nome, '  ', ' ')))) AS restaurantes_reais FROM restaurantes",
+     note:"6 cadastros, 5 com CNPJ, 5 restaurantes reais. O cadastro sem CNPJ é justamente a cópia do Sushi Kaze."},
+    {t:"Telefones disfarçados",c:"REGEXP_REPLACE",a:"Aula 18",
+     story:"Os telefones foram digitados de jeitos diferentes. Deixe só os números para comparar.",
+     task:"Mostre <code>id_restaurante</code>, <code>telefone</code> e um <code>telefone_limpo</code> só com os dígitos, para todos os restaurantes.",
+     hint:"<code>REGEXP_REPLACE(telefone, r'[^0-9]', '') AS telefone_limpo</code> — o padrão <code>[^0-9]</code> significa “qualquer coisa que não seja dígito”.",
+     sol:"SELECT id_restaurante, telefone, REGEXP_REPLACE(telefone, r'[^0-9]', '') AS telefone_limpo FROM restaurantes",
+     note:"O cadastro 5 usa o mesmo telefone do Sushi Kaze verdadeiro: 2133443030."},
+    {t:"Para onde vai o dinheiro",c:"SPLIT",a:"Aula 18",
+     story:"Os repasses caem na chave PIX de cada restaurante. Veja de que domínio é cada chave.",
+     task:"Mostre <code>id_restaurante</code>, <code>chave_pix</code> e o <code>dominio</code> da chave (o que vem depois do @), para todos os restaurantes.",
+     hint:"<code>SPLIT(chave_pix, '@')[SAFE_OFFSET(1)] AS dominio</code> — o OFFSET começa em 0, então 1 é a segunda parte.",
+     sol:"SELECT id_restaurante, chave_pix, SPLIT(chave_pix, '@')[SAFE_OFFSET(1)] AS dominio FROM restaurantes",
+     note:"Todos recebem numa chave com o domínio da própria empresa, menos o cadastro 5: repasse.sk@gmail.com, um e-mail pessoal."},
+    {t:"Quem cadastrou",c:"SUBSTR + STRPOS + INITCAP",a:"Aula 18",
+     story:"A coluna <code>cadastrado_por</code> guarda o login de quem criou o cadastro. Extraia o primeiro nome, já com a inicial maiúscula.",
+     task:"Mostre <code>id_restaurante</code>, <code>cadastrado_por</code> e um <code>responsavel</code> com o texto antes do ponto do login, com a primeira letra maiúscula.",
+     hint:"<code>STRPOS(cadastrado_por, '.')</code> diz onde está o ponto. <code>INITCAP(SUBSTR(cadastrado_por, 1, STRPOS(cadastrado_por, '.') - 1)) AS responsavel</code>",
+     sol:"SELECT id_restaurante, cadastrado_por, INITCAP(SUBSTR(cadastrado_por, 1, STRPOS(cadastrado_por, '.') - 1)) AS responsavel FROM restaurantes",
+     note:"Renata cadastrou quatro restaurantes. Igor cadastrou dois: o Doce Ponto e o cadastro 5."},
+    {t:"Fora do expediente",c:"FORMAT_DATE + EXTRACT + NOT",a:"Aulas 14 e 18",
+     story:"Cadastros de restaurantes são feitos em horário comercial. Procure exceções.",
+     task:"Mostre <code>id_restaurante</code>, <code>cadastrado_em</code>, o <code>dia_semana</code> (nome do dia) e a <code>hora</code> do cadastro, só dos cadastros <b>fora</b> do horário das 8h às 18h.",
+     hint:"<code>FORMAT_DATE('%A', DATE(cadastrado_em)) AS dia_semana</code>, <code>EXTRACT(HOUR FROM cadastrado_em) AS hora</code> e <code>WHERE NOT (EXTRACT(HOUR FROM cadastrado_em) >= 8 AND EXTRACT(HOUR FROM cadastrado_em) <= 18)</code>.",
+     sol:"SELECT id_restaurante, cadastrado_em, FORMAT_DATE('%A', DATE(cadastrado_em)) AS dia_semana, EXTRACT(HOUR FROM cadastrado_em) AS hora FROM restaurantes WHERE NOT (EXTRACT(HOUR FROM cadastrado_em) >= 8 AND EXTRACT(HOUR FROM cadastrado_em) <= 18)",
+     note:"Um único cadastro fora do expediente: o 5, num sábado (Saturday) às 23h52."},
+    {t:"Primeiro e último repasse",c:"MIN + MAX + DATE_DIFF",a:"Aulas 18 e 21",
+     story:"Resuma os repasses de cada restaurante: quando começaram, quando foi o último e quanto somaram.",
+     task:"Por <code>id_restaurante</code>, mostre o <code>primeiro</code> e o <code>ultimo</code> pagamento de repasse, os <code>dias</code> entre eles e o <code>total</code> repassado (2 casas).",
+     hint:"<code>MIN(pago_em) AS primeiro, MAX(pago_em) AS ultimo, DATE_DIFF(MAX(pago_em), MIN(pago_em), DAY) AS dias, ROUND(SUM(valor_repasse), 2) AS total</code> com <code>GROUP BY id_restaurante</code>.",
+     sol:"SELECT id_restaurante, MIN(pago_em) AS primeiro, MAX(pago_em) AS ultimo, DATE_DIFF(MAX(pago_em), MIN(pago_em), DAY) AS dias, ROUND(SUM(valor_repasse), 2) AS total FROM repasses GROUP BY id_restaurante",
+     note:"O cadastro 5 recebeu R$ 2.320,75 em 13 dias. O Sushi Kaze verdadeiro, R$ 286,00 em um mês."},
+    {t:"Período de carência",c:"DATE_ADD",a:"Aula 18",
+     story:"Pela regra do EntregaJá, um restaurante novo só recebe repasses 30 dias depois do cadastro.",
+     task:"Mostre <code>id_restaurante</code>, a data do <code>cadastro</code> (só a data, sem hora) e a data <code>liberado_em</code>, 30 dias depois do cadastro.",
+     hint:"<code>DATE(cadastrado_em) AS cadastro</code> e <code>DATE_ADD(DATE(cadastrado_em), INTERVAL 30 DAY) AS liberado_em</code>",
+     sol:"SELECT id_restaurante, DATE(cadastrado_em) AS cadastro, DATE_ADD(DATE(cadastrado_em), INTERVAL 30 DAY) AS liberado_em FROM restaurantes",
+     note:"O cadastro 5 só poderia receber a partir de 2026-11-02 — e já recebeu quatro repasses em outubro."},
+    {t:"Mês a mês",c:"DATE_TRUNC + GROUP BY com duas colunas",a:"Aulas 18 e 21",
+     story:"Some os repasses por mês e por restaurante, como no relatório do Financeiro.",
+     task:"Mostre o <code>mes</code> (data truncada no primeiro dia do mês), o <code>id_restaurante</code> e o <code>total</code> repassado (2 casas) para cada combinação de mês e restaurante.",
+     hint:"<code>DATE_TRUNC(pago_em, MONTH) AS mes</code> e <code>GROUP BY mes, id_restaurante</code>",
+     sol:"SELECT DATE_TRUNC(pago_em, MONTH) AS mes, id_restaurante, ROUND(SUM(valor_repasse), 2) AS total FROM repasses GROUP BY mes, id_restaurante",
+     note:"Em outubro, o cadastro 5 recebeu R$ 2.320,75. Todos os outros restaurantes juntos receberam R$ 462,00."},
+    {t:"Repasse sem pedido",c:"RIGHT JOIN",a:"Aula 19",
+     story:"Todo repasse deveria corresponder a um pedido. Comece pela tabela de pedidos e traga <b>todos</b> os repasses, com ou sem par.",
+     task:"Mostre <code>id_repasse</code>, <code>id_pedido</code> do repasse e <code>valor_repasse</code> dos repasses que <b>não têm pedido</b> correspondente, usando <code>pedidos p RIGHT JOIN repasses r</code>.",
+     hint:"<code>FROM pedidos p RIGHT JOIN repasses r ON p.id_pedido = r.id_pedido WHERE p.id_pedido IS NULL</code>",
+     sol:"SELECT r.id_repasse, r.id_pedido, r.valor_repasse FROM pedidos p RIGHT JOIN repasses r ON p.id_pedido = r.id_pedido WHERE p.id_pedido IS NULL",
+     note:"Quatro repasses apontam para pedidos que não existem (9001 a 9004). Todos para o cadastro 5."},
+    {t:"Tudo que não fecha",c:"FULL JOIN",a:"Aula 19",
+     story:"Agora olhe dos dois lados: pedidos sem repasse e repasses sem pedido.",
+     task:"Mostre <code>id_pedido</code> e <code>status</code> do pedido e <code>id_repasse</code> de todas as linhas em que falta o pedido <b>ou</b> falta o repasse.",
+     hint:"<code>FROM pedidos p FULL JOIN repasses r ON p.id_pedido = r.id_pedido WHERE p.id_pedido IS NULL OR r.id_repasse IS NULL</code>",
+     sol:"SELECT p.id_pedido, p.status, r.id_repasse FROM pedidos p FULL JOIN repasses r ON p.id_pedido = r.id_pedido WHERE p.id_pedido IS NULL OR r.id_repasse IS NULL",
+     note:"Do lado dos pedidos, tudo se explica: o 207 foi cancelado e o 210 e o 211 são recentes. Do lado dos repasses, sobram os quatro fantasmas."},
+    {t:"Sem CNPJ, com dono",c:"Subquery com IN",a:"Aula 23",
+     story:"Descubra quem é o funcionário por trás dos cadastros sem CNPJ, sem digitar o login na mão.",
+     task:"Mostre <code>nome</code> e <code>area</code> dos funcionários cujo <code>login</code> aparece como <code>cadastrado_por</code> de algum restaurante <b>sem CNPJ</b>.",
+     hint:"<code>WHERE login IN (SELECT cadastrado_por FROM restaurantes WHERE cnpj IS NULL)</code>",
+     sol:"SELECT nome, area FROM funcionarios WHERE login IN (SELECT cadastrado_por FROM restaurantes WHERE cnpj IS NULL)",
+     note:"Só um nome: Igor Matos, de Parcerias."},
+    {t:"Média por restaurante",c:"Subquery no FROM",a:"Aula 23",
+     story:"Quanto cada restaurante recebe, em média? Primeiro some por restaurante, depois tire a média desses totais.",
+     task:"Numa só linha, mostre a <code>media_por_restaurante</code>: a média dos totais repassados a cada restaurante, com 2 casas.",
+     hint:"<code>SELECT ROUND(AVG(total), 2) AS media_por_restaurante FROM (SELECT id_restaurante, SUM(valor_repasse) AS total FROM repasses GROUP BY id_restaurante) AS por_restaurante</code>",
+     sol:"SELECT ROUND(AVG(total), 2) AS media_por_restaurante FROM (SELECT id_restaurante, SUM(valor_repasse) AS total FROM repasses GROUP BY id_restaurante) AS por_restaurante",
+     note:"R$ 499,72 por restaurante — uma média puxada para cima pelo cadastro 5. Sem ele, ficaria perto de R$ 136."},
+    {t:"Cada repasse contra a média",c:"Subquery no SELECT",a:"Aula 23",
+     story:"Coloque a média geral dos repasses ao lado de cada repasse para comparar linha a linha.",
+     task:"Mostre <code>id_repasse</code>, <code>id_restaurante</code>, <code>valor_repasse</code> e uma coluna <code>media_geral</code> com a média de todos os repasses (2 casas), repetida em cada linha.",
+     hint:"<code>(SELECT ROUND(AVG(valor_repasse), 2) FROM repasses) AS media_geral</code>",
+     sol:"SELECT id_repasse, id_restaurante, valor_repasse, (SELECT ROUND(AVG(valor_repasse), 2) FROM repasses) AS media_geral FROM repasses",
+     note:"A média geral é R$ 249,86. Os quatro repasses do cadastro 5 valem de quase 2 a quase 3 vezes isso; todos os outros ficam abaixo."},
+    {t:"A janela inteira",c:"MAX() OVER + UNBOUNDED",a:"Aula 29",
+     story:"Última peça: compare cada repasse com o maior e com o total do próprio restaurante. Com ORDER BY na janela, a soma vira acumulado — a menos que a moldura pegue a partição inteira.",
+     task:"Mostre <code>id_repasse</code>, <code>id_restaurante</code>, <code>valor_repasse</code>, o <code>maior_do_restaurante</code> e o <code>total_restaurante</code> (2 casas), usando uma janela ordenada por <code>pago_em</code> que cubra <b>todas</b> as linhas do restaurante.",
+     hint:"<code>MAX(valor_repasse) OVER (PARTITION BY id_restaurante)</code> e <code>ROUND(SUM(valor_repasse) OVER (PARTITION BY id_restaurante ORDER BY pago_em ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING), 2)</code>",
+     sol:"SELECT id_repasse, id_restaurante, valor_repasse, MAX(valor_repasse) OVER (PARTITION BY id_restaurante) AS maior_do_restaurante, ROUND(SUM(valor_repasse) OVER (PARTITION BY id_restaurante ORDER BY pago_em ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING), 2) AS total_restaurante FROM repasses",
+     note:"Os repasses do cadastro 5 só cresceram: de R$ 480,00 a R$ 705,25, somando R$ 2.320,75 em quatro pagamentos."}
+  ],
+  accuse:{
+    prompt:"Um restaurante que não existe recebeu R$ 2.320,75 em outubro. Quem montou o esquema?",
+    table:"funcionarios", idCol:0, nameCol:1, sub:p=>`${p[3]}, ${p[2]}`, culprit:2,
+    wrongById:{
+      1:"cadastrou o Sushi Kaze verdadeiro, com CNPJ e chave PIX da empresa, em horário comercial.",
+      3:"é do Financeiro e foi quem percebeu que os repasses não fechavam com os pedidos.",
+      4:"é do Suporte e não aparece como responsável por nenhum cadastro."
+    },
+    verdict:"Igor Matos cadastrou numa noite de sábado uma cópia do Sushi Kaze, com o nome cheio de espaços, o mesmo telefone, sem CNPJ e com a chave PIX pessoal repasse.sk@gmail.com. Depois lançou quatro repasses para pedidos que nunca existiram: R$ 2.320,75 antes mesmo de terminar a carência de 30 dias.",
+    learned:"DISTINCT com LIMIT, ORDER BY com duas colunas, LENGTH, TRIM, REPLACE, UPPER, INITCAP, SUBSTR, STRPOS, SPLIT, REGEXP_REPLACE, FORMAT_DATE, NOT, !=, COUNT(coluna), COUNT(DISTINCT), MIN, MAX, DATE_DIFF, DATE_ADD, DATE_TRUNC, GROUP BY com duas colunas, RIGHT JOIN, FULL JOIN, subqueries com IN, no FROM e no SELECT, e janelas com UNBOUNDED"
+  }
+};
+
+// ===== Caso 5: A conta do BigQuery (aulas 18, 25, 30 e 31) =====
+const PAINEL = [0,5,10,15,20,25].map((m,k)=>[k+1,"looker.painel",`2026-10-20 08:${String(m).padStart(2,"0")}:00`,"SELECT * FROM vw_pedidos_completos",42.2,"Dashboard"]);
+const CASE5 = {
+  id:"caso5", key:"detetive-sql-caso5-v1",
+  title:"A conta do BigQuery",
+  intro:"A conta do BigQuery do EntregaJá triplicou em um mês. Descubra quais consultas pesam, por que pesam e o que fazer a respeito.",
+  schemaNote:"Aqui você vê uma amostra. Na tabela real, pedidos tem 120 milhões de linhas, é particionada por data_pedido (um bloco por mês, de jan/2025 a out/2026) e clusterizada por categoria. A tabela jobs imita a INFORMATION_SCHEMA.JOBS do BigQuery.",
+  scan:{ pedidos:{ rows:120e6, partitionCol:"data_pedido", firstYear:2025, months:22,
+    colBytes:{id_pedido:8, data_pedido:8, id_cliente:8, categoria:10, valor:8, status:10, endereco_entrega:60, observacoes:240} } },
+  tables:{
+    pedidos:{cols:["id_pedido INTEGER","data_pedido TEXT","id_cliente INTEGER","categoria TEXT","valor REAL","status TEXT","endereco_entrega TEXT","observacoes TEXT"], rows:[
+      [1,"2026-05-03",11,"Pizza",72,"Concluído","Rua das Flores, 120","Sem cebola"],
+      [2,"2026-06-14",12,"Japonesa",118,"Concluído","Av. Central, 45","Interfone quebrado"],
+      [3,"2026-07-02",13,"Pizza",64,"Concluído","Rua do Porto, 9",""],
+      [4,"2026-07-05",14,"Japonesa",132,"Concluído","Rua Sete, 300","Deixar na portaria"],
+      [5,"2026-07-11",11,"Doces",28,"Concluído","Rua das Flores, 120",""],
+      [6,"2026-07-19",15,"Pizza",81,"Concluído","Av. Mar, 77","Troco para 100"],
+      [7,"2026-07-28",16,"Nordestina",47,"Concluído","Rua Nova, 12",""],
+      [8,"2026-07-30",12,"Japonesa",96,"Cancelado","Av. Central, 45",""],
+      [9,"2026-08-02",17,"Doces",35,"Concluído","Rua do Sol, 5",""],
+      [10,"2025-07-15",13,"Pizza",58,"Concluído","Rua do Porto, 9",""],
+      [11,"2026-09-21",18,"Nordestina",52,"Concluído","Rua Alta, 88",""],
+      [12,"2026-10-18",14,"Pizza",90,"Concluído","Rua Sete, 300",""]]},
+    jobs:{cols:["id_job INTEGER","usuario TEXT","executado_em TEXT","consulta TEXT","gb_processados REAL","origem TEXT"], rows:[
+      ...PAINEL,
+      [7,"bruno.lima","2026-10-20 08:03:00","SELECT * FROM pedidos LIMIT 10",42.2,"Console"],
+      [8,"bruno.lima","2026-10-20 08:12:00","Receita por categoria em julho/2026",0.1,"Console"],
+      [9,"ana.souza","2026-10-20 08:07:00","SELECT categoria, valor FROM pedidos",2.2,"Console"],
+      [10,"ana.souza","2026-10-20 08:21:00","Pedidos por status em outubro/2026",0.1,"Console"],
+      [11,"agenda.diaria","2026-10-20 08:00:00","Relatório diário de receita",2.4,"Agendada"]]}
+  },
+  chips:["SELECT","FROM","WHERE","AND","GROUP BY","ORDER BY","DESC","LIMIT","SUM()","COUNT(*)","ROUND( , 1)","AS","data_pedido >= '2026-07-01'","data_pedido < '2026-08-01'"],
+  levels:[
+    {t:"A espiadinha de 42 GB",c:"Colunas × bytes",a:"Aula 25",
+     story:"A tabela real de pedidos tem 120 milhões de linhas. Você vê só uma amostra, mas o medidor abaixo da consulta mostra quanto ela processaria na tabela real. Rode a consulta que já está no editor e olhe o medidor.",
+     task:"Depois, reescreva para trazer só <code>categoria</code> e <code>valor</code> de <b>todos</b> os pedidos da amostra, processando no máximo <b>3 GB</b>.",
+     path:"O BigQuery cobra pelas colunas que lê, não pelas linhas que devolve. Peça só as duas colunas, sem LIMIT.",
+     hint:"<code>SELECT categoria, valor FROM pedidos</code>",
+     sol:"SELECT categoria, valor FROM pedidos", start:"SELECT * FROM pedidos LIMIT 10", budget:3,
+     note:"SELECT * com LIMIT 10 processaria 42,2 GB. Só categoria e valor: 2,2 GB, quase 20 vezes menos."},
+    {type:"quiz",t:"O LIMIT não economiza",c:"LIMIT × bytes lidos",a:"Aula 25",
+     story:"O Bruno jurou que “só deu uma espiada” com LIMIT 10. Mesmo assim, a consulta dele aparece na conta.",
+     q:"Por que <code>SELECT * FROM pedidos LIMIT 10</code> processa os mesmos 42,2 GB que <code>SELECT * FROM pedidos</code>?",
+     opts:[
+      {t:"O BigQuery lê as colunas pedidas na tabela inteira e só depois corta o resultado em 10 linhas.", ok:true},
+      {t:"Porque o BigQuery ignora o LIMIT em tabelas grandes.", why:"O LIMIT funciona: o resultado vem com 10 linhas. O que ele não reduz é a leitura."},
+      {t:"Porque a consulta roda uma vez para cada linha devolvida.", why:"A consulta roda uma vez só, distribuída entre vários workers."},
+      {t:"Porque o resultado foi guardado em cache.", why:"O cache faria a consulta sair de graça, não cara."}],
+     note:"O LIMIT corta o que você vê, não o que o BigQuery lê. Para espiar uma tabela sem custo, use a aba de prévia (Preview) do console."},
+    {t:"A armadilha da função",c:"Partição × função na coluna",a:"Aula 25",
+     story:"A tabela é particionada por <code>data_pedido</code>: um bloco por mês, 22 no total. A consulta no editor calcula a receita de julho de 2026 e dá o resultado certo — mas olhe o medidor.",
+     task:"Reescreva para mostrar <code>categoria</code> e a <code>receita</code> (soma do valor) de <b>julho de 2026</b>, processando no máximo <b>0,3 GB</b>.",
+     path:"Com uma função em volta de data_pedido, o BigQuery não sabe quais blocos pular. Compare a coluna direto com as datas de início e de fim do mês.",
+     hint:"<code>WHERE data_pedido >= '2026-07-01' AND data_pedido < '2026-08-01'</code>",
+     sol:"SELECT categoria, SUM(valor) AS receita FROM pedidos WHERE data_pedido >= '2026-07-01' AND data_pedido < '2026-08-01' GROUP BY categoria",
+     start:"SELECT categoria, SUM(valor) AS receita FROM pedidos WHERE EXTRACT(MONTH FROM data_pedido) = 7 AND EXTRACT(YEAR FROM data_pedido) = 2026 GROUP BY categoria", budget:0.3,
+     note:"Com o filtro direto na data, a consulta lê 1 dos 22 blocos: cerca de 0,14 GB em vez de 3,1 GB."},
+    {type:"quiz",t:"Partição e cluster juntos",c:"Clustering",a:"Aula 25",
+     story:"Além da partição por mês, a tabela é clusterizada por <code>categoria</code>: dentro de cada bloco, as linhas ficam ordenadas por categoria.",
+     q:"Qual filtro aproveita a partição <b>e</b> o cluster ao mesmo tempo?",
+     opts:[
+      {t:"<code>WHERE data_pedido >= '2026-07-01' AND categoria = 'Pizza'</code>", ok:true},
+      {t:"<code>WHERE EXTRACT(YEAR FROM data_pedido) = 2026 AND categoria = 'Pizza'</code>", why:"Usa o cluster, mas a função em volta de data_pedido pode impedir o pulo das partições."},
+      {t:"<code>WHERE data_pedido >= '2026-07-01' AND valor > 50</code>", why:"Pula partições, mas valor não é coluna de cluster: dentro de cada bloco, tudo é varrido."},
+      {t:"<code>WHERE categoria = 'Pizza' ORDER BY data_pedido</code>", why:"Usa o cluster, mas lê todos os meses e ainda ordena o resultado inteiro."}],
+     note:"A partição pula meses inteiros; o cluster vai direto às linhas da categoria dentro de cada mês. O ganho do cluster aparece na conta, não na estimativa mostrada antes de rodar."},
+    {type:"quiz",t:"A mesma pergunta, quatro consultas",c:"Otimização",a:"Aula 25",
+     story:"Quatro analistas responderam à mesma pergunta: receita por categoria em julho de 2026.",
+     q:"Qual das consultas é a mais barata?",
+     opts:[
+      {t:"<code>SELECT * FROM pedidos ORDER BY data_pedido</code>", why:"Lê todas as colunas de todos os meses e ainda ordena tudo."},
+      {t:"<code>SELECT categoria, SUM(valor) FROM pedidos WHERE data_pedido >= '2026-07-01' AND data_pedido < '2026-08-01' GROUP BY categoria</code>", ok:true},
+      {t:"<code>SELECT categoria, SUM(valor) FROM pedidos WHERE FORMAT_DATE('%Y-%m', data_pedido) = '2026-07' GROUP BY categoria</code>", why:"A função em volta da coluna de partição faz a consulta ler os 22 meses."},
+      {t:"<code>SELECT categoria, valor FROM pedidos ORDER BY data_pedido LIMIT 1000</code>", why:"O LIMIT não reduz a leitura, e o ORDER BY ordena a tabela inteira antes de cortar."}],
+     note:"Menos colunas, filtro direto na partição e nenhum ORDER BY desnecessário: mesma resposta, uma fração do custo."},
+    {type:"quiz",t:"Que horas são em Lisboa?",c:"DATE × DATETIME × TIMESTAMP",a:"Aula 18",
+     story:"O EntregaJá vai abrir em Lisboa. O time quer comparar o instante exato dos pedidos de Porto Claro e de Lisboa.",
+     q:"Qual tipo de dado usar na coluna <code>data_hora_pedido</code>?",
+     opts:[
+      {t:"DATE", why:"Guarda só o dia: a hora do pedido se perde."},
+      {t:"DATETIME", why:"Guarda data e hora, mas sem fuso: 20h em Porto Claro e 20h em Lisboa pareceriam o mesmo instante."},
+      {t:"TIMESTAMP", ok:true},
+      {t:"STRING", why:"Texto não tem regras de data: ordenar e comparar instantes fica por sua conta."}],
+     note:"TIMESTAMP guarda um instante absoluto, com fuso. DATETIME é data e hora sem fuso. DATE é só o dia."},
+    {t:"Quem está gastando",c:"INFORMATION_SCHEMA.JOBS",a:"Aulas 21 e 25",
+     story:"No BigQuery, a visão <code>INFORMATION_SCHEMA.JOBS</code> registra cada consulta executada e quantos bytes ela processou. Aqui ela virou a tabela <code>jobs</code>, com 30 minutos de uma manhã.",
+     task:"Mostre <code>usuario</code>, a quantidade de <code>consultas</code> e o <code>total_gb</code> processado (1 casa) de cada usuário.",
+     path:"Uma linha por usuário: conte as consultas e some os gigabytes de cada grupo.",
+     hint:"<code>SELECT usuario, COUNT(*) AS consultas, ROUND(SUM(gb_processados), 1) AS total_gb FROM jobs GROUP BY usuario</code>",
+     sol:"SELECT usuario, COUNT(*) AS consultas, ROUND(SUM(gb_processados), 1) AS total_gb FROM jobs GROUP BY usuario",
+     note:"O painel do Looker (looker.painel) processou 253,2 GB em 30 minutos. Todos os outros usuários juntos, 47 GB."},
+    {t:"A consulta que se repete",c:"GROUP BY + ORDER BY + LIMIT",a:"Aulas 11 e 21",
+     story:"Descubra quais consultas pesam mais na conta, somando todas as vezes que cada uma rodou.",
+     task:"Mostre a <code>consulta</code>, quantas <code>execucoes</code> ela teve e o <code>total_gb</code> (1 casa) das <b>3 consultas</b> que mais processaram, da maior para a menor.",
+     path:"Agrupe pelo texto da consulta, some os gigabytes, ordene do maior para o menor e fique com as três primeiras.",
+     hint:"<code>SELECT consulta, COUNT(*) AS execucoes, ROUND(SUM(gb_processados), 1) AS total_gb FROM jobs GROUP BY consulta ORDER BY total_gb DESC LIMIT 3</code>",
+     sol:"SELECT consulta, COUNT(*) AS execucoes, ROUND(SUM(gb_processados), 1) AS total_gb FROM jobs GROUP BY consulta ORDER BY total_gb DESC LIMIT 3", ordered:true,
+     note:"A campeã é SELECT * FROM vw_pedidos_completos: 6 execuções, uma a cada 5 minutos, 42,2 GB cada."},
+    {type:"quiz",t:"A view guarda o quê?",c:"Custo de uma view",a:"Aula 30",
+     story:"A <code>vw_pedidos_completos</code> processa 42,2 GB a cada consulta. O painel a consulta a cada 5 minutos, 24 horas por dia: 288 vezes.",
+     q:"Quanto é processado por dia só por causa do painel?",
+     opts:[
+      {t:"42,2 GB: a view guarda o resultado da primeira execução.", why:"Uma view guarda a consulta, não o resultado. Cada SELECT roda tudo de novo."},
+      {t:"Cerca de 12 TB (42,2 GB × 288).", ok:true},
+      {t:"Zero: o cache do BigQuery responde todas as vezes.", why:"O cache só vale enquanto a tabela não muda, e pedidos recebe linhas novas o tempo todo."},
+      {t:"288 GB: 1 GB por execução.", why:"Cada execução lê os mesmos 42,2 GB."}],
+     note:"Cerca de 12 TB por dia, só para o painel. A view organiza, mas não economiza."},
+    {type:"quiz",t:"Só para hoje",c:"View × CTE",a:"Aula 30",
+     story:"A Ana está testando uma hipótese rápida sobre cupons, num script que só ela vai rodar hoje.",
+     q:"Onde ela deve guardar o passo intermediário da análise?",
+     opts:[
+      {t:"Numa CTE (WITH … AS), dentro da própria consulta.", ok:true},
+      {t:"Numa view criada no banco.", why:"A view fica salva para todo mundo; para um teste descartável, é bagunça a mais no banco."},
+      {t:"Numa materialized view.", why:"Ela guarda o resultado e custa armazenamento. Exagero para um teste que roda uma vez."},
+      {t:"Copiando o mesmo trecho de SQL em vários pontos do script.", why:"É exatamente a repetição que a CTE evita."}],
+     note:"CTE é organização local: vale só dentro da consulta e some quando ela termina."},
+    {type:"quiz",t:"Dados sensíveis",c:"View para governança",a:"Aula 30",
+     story:"O time de Marketing precisa analisar o comportamento de compra dos clientes, mas não pode ver e-mail nem CPF.",
+     q:"O que o time de dados deve criar?",
+     opts:[
+      {t:"Uma CTE com as colunas permitidas.", why:"A CTE só existe dentro da consulta de quem a escreveu; não protege nada para outras pessoas."},
+      {t:"Uma view sem as colunas sensíveis, com acesso liberado só a ela.", ok:true},
+      {t:"Acesso à tabela original, com o pedido de não olhar as colunas sensíveis.", why:"Governança não pode depender de boa vontade."},
+      {t:"Uma cópia da tabela sem as colunas, atualizada à mão toda semana.", why:"Funciona, mas fica desatualizada e duplica o armazenamento. A view resolve sem copiar."}],
+     note:"View é governança e reuso: o time consulta a view, nunca a tabela original."},
+    {type:"quiz",t:"Quando materializar",c:"Materialized view",a:"Aula 31",
+     story:"O painel mostra a receita por categoria e por dia. Ele abre a mesma soma o dia inteiro, a tabela é grande e um atraso de alguns minutos não incomoda ninguém.",
+     q:"O que pedir ao time de dados?",
+     opts:[
+      {t:"Uma view comum com essa soma.", why:"Continuaria recalculando tudo a cada abertura do painel."},
+      {t:"Uma CTE dentro da consulta do painel.", why:"Também não guarda nada entre uma execução e outra."},
+      {t:"Uma materialized view com essa soma.", ok:true},
+      {t:"Atualizar o painel só uma vez por hora.", why:"Reduz o custo, mas deixa o painel menos útil — e cada execução continua pesada."}],
+     note:"As três condições da aula 31 estão aqui: agregação cara e repetida, tabela grande e atraso tolerável."},
+    {type:"quiz",t:"O que a materialized view recusa",c:"Limitações",a:"Aula 31",
+     story:"Ao criar a materialized view, o time quis contar clientes diferentes por dia, mas o BigQuery recusou <code>COUNT(DISTINCT id_cliente)</code>.",
+     q:"O que usar no lugar?",
+     opts:[
+      {t:"<code>COUNT(id_cliente)</code>", why:"Conta linhas com cliente, não clientes diferentes: quem pede duas vezes seria contado duas vezes."},
+      {t:"<code>APPROX_COUNT_DISTINCT(id_cliente)</code>", ok:true},
+      {t:"Uma CTE dentro da materialized view.", why:"Pelas regras vistas na aula, materialized views não aceitam CTEs."},
+      {t:"<code>SUM(id_cliente)</code>", why:"Somar ids não conta nada."}],
+     note:"APPROX_COUNT_DISTINCT dá uma contagem aproximada, com erro pequeno, e é aceita em materialized views. Essas regras mudam com o tempo: confira a documentação do BigQuery."},
+    {type:"quiz",t:"A CTE que lê três vezes",c:"CTE × custo",a:"Aula 30",
+     story:"Uma CTE chamada <code>base</code> lê a tabela pedidos e é usada em três JOINs na mesma consulta.",
+     q:"O que pode acontecer?",
+     opts:[
+      {t:"Nada: a CTE guarda o resultado depois da primeira leitura.", why:"A CTE não é uma tabela guardada e pode ser recalculada a cada vez que é referenciada."},
+      {t:"A consulta dá erro, porque uma CTE só pode ser usada uma vez.", why:"Ela pode ser usada várias vezes; o risco é de custo, não de erro."},
+      {t:"O BigQuery pode ler pedidos três vezes. Em consultas críticas, confira o plano de execução ou materialize esse passo.", ok:true},
+      {t:"A CTE vira uma view permanente.", why:"A CTE some quando a consulta termina."}],
+     note:"O otimizador melhorou muito nisso, mas em consultas críticas vale conferir o plano de execução."}
+  ],
+  accuse:{
+    heading:"A recomendação", cta:"Fazer a recomendação",
+    prompt:"O painel roda a mesma consulta pesada a cada 5 minutos, a tabela é grande e um atraso de alguns minutos é aceitável. O que você recomenda ao Financeiro?",
+    options:[
+      {id:1, name:"Proibir SELECT * no console", sub:"Atinge os analistas"},
+      {id:2, name:"Trocar a view do painel por uma CTE", sub:"Muda a consulta do painel"},
+      {id:3, name:"Confiar no cache do BigQuery", sub:"Não muda nada"},
+      {id:4, name:"Criar uma materialized view com a soma que o painel mostra", sub:"Muda a fonte do painel"}],
+    culprit:4,
+    wrongById:{
+      1:"ajuda, mas o console é uma parte pequena da conta: 47 GB contra 253 GB do painel na mesma meia hora.",
+      2:"não guarda nada entre execuções: o painel reprocessaria tudo do mesmo jeito.",
+      3:"não funciona aqui: o cache se perde quando a tabela recebe pedidos novos, o que acontece o tempo todo."
+    },
+    stamp:"Conta sob controle",
+    verdict:"O painel só mostra a receita por categoria e por dia, mas lia uma view com SELECT * de 42,2 GB 288 vezes por dia. Uma materialized view com essa soma, sem SELECT * e sem JOINs complexos, é lida pronta a cada abertura e se atualiza sozinha em minutos. Somando a isso o hábito de pedir só as colunas necessárias e filtrar direto pela partição, a conta volta ao normal.",
+    learned:"custo por bytes lidos, LIMIT, partição, cluster, tipos de data, INFORMATION_SCHEMA, view, CTE e materialized view"
+  }
+};
+
+// ===== Caso 6: Fora da escala (LTRIM, RTRIM, MOD e <>) =====
+const PONTO = (() => {
+  const zeros = ["000","00","0000","000","00","0"];
+  const dias = {1:[1,3,5],2:[2,4,6],3:[1,3,5],4:[2,4,5],5:[1,3,5],6:[2,4,5]};
+  const rows = []; let id = 1;
+  for (let d = 1; d <= 6; d++) dias[d].forEach((e, k) => {
+    const suf = (id % 3 === 0) ? "##" : "#";
+    rows.push([id, zeros[(id + e) % 6] + (e*10) + suf, `2026-10-0${d}`, `08:0${k*3}`]); id++;
+  });
+  return rows;
+})();
+const CASE6 = {
+  id:"caso6", key:"detetive-sql-caso6-v1",
+  title:"Fora da escala",
+  intro:"No hub do EntregaJá, quem tem id ímpar trabalha nos dias ímpares e quem tem id par, nos dias pares. O ponto eletrônico registrou alguém fora da escala.",
+  tables:{
+    entregadores:{cols:["id_entregador INTEGER","nome TEXT","cracha INTEGER"], rows:[
+      [1,"Rui Campos",10],[2,"Talita Nogueira",20],[3,"Bruna Vasconcelos",30],
+      [4,"Otto Ribeiro",40],[5,"Lia Fontes",50],[6,"Mateus Rocha",60]]},
+    ponto:{cols:["id_registro INTEGER","codigo_cracha TEXT","dia TEXT","hora_entrada TEXT"], rows:PONTO}
+  },
+  chips:["SELECT","FROM","WHERE","JOIN","ON","LTRIM( , '0')","RTRIM( , '#')","CAST( AS INT64)","MOD( , 2)","EXTRACT(DAY FROM )","<>","AS"],
+  levels:[
+    {t:"O sufixo do leitor",c:"RTRIM",a:"Aula 18",
+     story:"O leitor de crachás grava o número com zeros à esquerda e um ou dois <code>#</code> no fim. Comece limpando o fim do código.",
+     task:"Mostre <code>id_registro</code>, <code>codigo_cracha</code> e um <code>sem_sufixo</code> com o código sem os <code>#</code> da direita, usando <b>RTRIM</b>.",
+     path:"O RTRIM aceita um segundo argumento: os caracteres a remover da direita. Por padrão, ele remove espaços.",
+     hint:"<code>RTRIM(codigo_cracha, '#') AS sem_sufixo</code>",
+     sol:"SELECT id_registro, codigo_cracha, RTRIM(codigo_cracha, '#') AS sem_sufixo FROM ponto",
+     requires:[{re:"\\bRTRIM\\s*\\(", msg:"Esta fase pede a função <code>RTRIM</code>."}], start:"SELECT ",
+     note:"Sem o sufixo, sobram códigos como 000050 e 030: zeros à esquerda seguidos do número do crachá."},
+    {t:"Os zeros da esquerda",c:"LTRIM",a:"Aula 18",
+     story:"Agora tire os zeros da esquerda. Cuidado: o número do crachá também termina em zero, e esse zero precisa ficar.",
+     task:"Mostre <code>id_registro</code> e um <code>codigo</code> com o código sem os <code>#</code> da direita e sem os zeros da <b>esquerda</b>, usando <b>LTRIM</b> e RTRIM.",
+     path:"Use uma função dentro da outra: primeiro tire o sufixo, depois os zeros só do lado esquerdo. Com TRIM, o zero final do crachá também iria embora.",
+     hint:"<code>LTRIM(RTRIM(codigo_cracha, '#'), '0') AS codigo</code>",
+     sol:"SELECT id_registro, LTRIM(RTRIM(codigo_cracha, '#'), '0') AS codigo FROM ponto",
+     requires:[{re:"\\bLTRIM\\s*\\(", msg:"Esta fase pede a função <code>LTRIM</code>."}],
+     note:"Os códigos limpos são 10, 20, 30, 40, 50 e 60 — os números dos crachás. Com TRIM, o 50 viraria 5."},
+    {t:"Dia par, dia ímpar",c:"MOD",a:"Aula 14",
+     story:"Para conferir a escala, você precisa saber se cada dia é par ou ímpar. O resto da divisão por 2 diz isso: 0 é par, 1 é ímpar.",
+     task:"Mostre <code>id_registro</code>, <code>dia</code> e uma coluna <code>resto</code> com o resto da divisão do dia do mês por 2, usando <b>MOD</b>.",
+     path:"Tire o dia do mês da data e calcule o resto da divisão desse número por 2.",
+     hint:"<code>MOD(EXTRACT(DAY FROM dia), 2) AS resto</code>",
+     sol:"SELECT id_registro, dia, MOD(EXTRACT(DAY FROM dia), 2) AS resto FROM ponto",
+     requires:[{re:"\\bMOD\\s*\\(", msg:"Esta fase pede a função <code>MOD</code>, que é a forma de calcular o resto no BigQuery."}],
+     note:"Dias 1, 3 e 5 têm resto 1; dias 2, 4 e 6 têm resto 0."},
+    {t:"Fora da escala",c:"JOIN + MOD + <>",a:"Aulas 14, 18 e 19",
+     story:"Junte cada registro ao entregador dono do crachá e compare a paridade do dia com a paridade do id do entregador.",
+     task:"Mostre o <code>nome</code> do entregador e o <code>dia</code> dos registros em que o resto do dia por 2 é <b>diferente</b> do resto do id do entregador por 2, usando o operador <b>&lt;&gt;</b>.",
+     path:"Ligue ponto e entregadores pelo número do crachá limpo (convertido para número). Depois compare os dois restos com o operador de diferente.",
+     hint:"<code>FROM ponto p JOIN entregadores e ON CAST(LTRIM(RTRIM(p.codigo_cracha, '#'), '0') AS INT64) = e.cracha WHERE MOD(EXTRACT(DAY FROM p.dia), 2) <> MOD(e.id_entregador, 2)</code>",
+     sol:"SELECT e.nome, p.dia FROM ponto p JOIN entregadores e ON CAST(LTRIM(RTRIM(p.codigo_cracha, '#'), '0') AS INT64) = e.cracha WHERE MOD(EXTRACT(DAY FROM p.dia), 2) <> MOD(e.id_entregador, 2)",
+     requires:[{re:"<>", msg:"Esta fase pede o operador <code>&lt;&gt;</code>. O <code>!=</code> faz a mesma coisa, mas aqui o objetivo é praticar a outra forma."}],
+     note:"Dois registros fora da escala, nos dias 4 e 6, os dois com o mesmo crachá."}
+  ],
+  accuse:{
+    heading:"A conferência",
+    prompt:"Dois registros aparecem fora da escala. De quem é o crachá usado neles?",
+    table:"entregadores", idCol:0, nameCol:1, sub:p=>`id ${p[0]}, crachá ${p[2]}`, culprit:5,
+    wrongById:{
+      1:"cumpriu a escala: só registrou ponto nos dias ímpares.",
+      2:"cumpriu a escala: só registrou ponto nos dias pares.",
+      3:"cumpriu a escala: só registrou ponto nos dias ímpares.",
+      4:"cumpriu a escala: só registrou ponto nos dias pares.",
+      6:"não aparece nos registros fora da escala. Ele é quem não registrou ponto nos dias 4 e 6."
+    },
+    stamp:"Escala conferida",
+    verdict:"O crachá 50, da Lia Fontes, registrou entrada nos dias 4 e 6, que são pares, fora da escala dela. Nesses mesmos dias, Mateus Rocha, que trabalha nos dias pares, não registrou ponto: Lia cobriu os turnos dele sem avisar a operação.",
+    learned:"RTRIM, LTRIM, MOD, CAST e o operador <>"
+  }
+};
+const CASES = [CASE1, CASE2, CASE3, CASE4, CASE5, CASE6];
+
+// Medidor fictício de bytes (só para casos com "scan")
+function missingRequirement(level, sql){
+  const clean = sql.replace(/--[^\n]*/g, "").replace(/'(?:[^']|'')*'/g, "''");
+  return (level.requires || []).find(rq => !new RegExp(rq.re, "i").test(clean)) || null;
+}
+function estimateScan(kase, sql){
+  if (!kase.scan) return null;
+  const noStr = sql.replace(/'(?:[^']|'')*'/g, "''");
+  let gb = 0, fullGb = 0, found = false, star = false, parts = 0, months = 0, fnTrap = false;
+  for (const [tname, cfg] of Object.entries(kase.scan)){
+    if (!new RegExp(`\\b${tname}\\b`, "i").test(noStr)) continue;
+    found = true;
+    const cols = Object.keys(cfg.colBytes);
+    star = /select\s+(?:distinct\s+)?\*|\b\w+\.\*/i.test(noStr);
+    const used = star ? cols : cols.filter(c => new RegExp(`\\b${c}\\b`, "i").test(noStr));
+    const rowBytes = used.reduce((a,c) => a + cfg.colBytes[c], 0);
+    const allBytes = cols.reduce((a,c) => a + cfg.colBytes[c], 0);
+    const pc = cfg.partitionCol, idx = d => { const [y,m] = d.split("-").map(Number); return (y - cfg.firstYear)*12 + m - 1; };
+    let lo = 0, hi = cfg.months - 1;
+    const prevDay = d => { const t = new Date(d + "T00:00:00Z"); t.setUTCDate(t.getUTCDate()-1); return t.toISOString().slice(0,10); };
+    let m; const re = new RegExp(`\\b${pc}\\s*(>=|<=|>|<|=)\\s*'(\\d{4}-\\d{2}-\\d{2})'`, "gi");
+    while ((m = re.exec(sql))){
+      const op = m[1], d = m[2];
+      if (op === ">=" || op === ">") lo = Math.max(lo, idx(d));
+      else if (op === "<=") hi = Math.min(hi, idx(d));
+      else if (op === "<") hi = Math.min(hi, idx(prevDay(d)));
+      else { lo = Math.max(lo, idx(d)); hi = Math.min(hi, idx(d)); }
+    }
+    const bt = new RegExp(`\\b${pc}\\s+BETWEEN\\s+'(\\d{4}-\\d{2}-\\d{2})'\\s+AND\\s+'(\\d{4}-\\d{2}-\\d{2})'`, "gi");
+    while ((m = bt.exec(sql))){ lo = Math.max(lo, idx(m[1])); hi = Math.min(hi, idx(m[2])); }
+    lo = Math.max(0, lo); hi = Math.min(cfg.months - 1, hi);
+    parts = Math.max(0, hi - lo + 1); months = cfg.months;
+    const where = (noStr.match(/\bwhere\b([\s\S]*?)(\bgroup\s+by\b|\border\s+by\b|\blimit\b|$)/i) || [,""])[1];
+    fnTrap = parts === months && new RegExp(`\\w+\\s*\\([^()]*\\b${pc}\\b`, "i").test(where);
+    gb += cfg.rows * rowBytes * (parts / cfg.months) / 1e9;
+    fullGb += cfg.rows * allBytes / 1e9;
+  }
+  return found ? {gb, fullGb, star, parts, months, fnTrap} : null;
+}
+
+
+
+function buildDb(SQL, kase){
+  const db = new SQL.Database();
+  addShims(db);
+  for (const [name, t] of Object.entries(kase.tables)){
+    db.run(`CREATE TABLE ${name} (${t.cols.join(", ")})`);
+    const ph = t.cols.map(()=>"?").join(",");
+    const st = db.prepare(`INSERT INTO ${name} VALUES (${ph})`);
+    for (const r of t.rows) st.run(r);
+    st.free();
   }
   return db;
 }
-function runSql(sql){
+function runQuery(SQL, kase, sql){
   const clean = sql.trim().replace(/;+\s*$/,"");
   if (!clean) throw new Error("Escreva uma consulta antes de executar.");
-  if (!/^\s*select\b/i.test(clean)) throw new Error("Neste caso, só consultas que começam com SELECT são aceitas — os arquivos do museu não podem ser alterados.");
+  if (!/^\s*(select|with)\b/i.test(clean)) throw new Error("Use uma consulta que comece com SELECT (ou WITH, para CTEs).");
   if (clean.includes(";")) throw new Error("Execute uma consulta por vez (sem ponto e vírgula no meio).");
-  const res = makeDb().exec(clean);
-  if (!Array.isArray(res)) throw new Error("A consulta não retornou linhas.");
-  return res;
+  const db = buildDb(SQL, kase);
+  try {
+    const res = db.exec(bqTranslate(clean));
+    if (!res.length) return {columns:[], values:[]};
+    return res[res.length-1];
+  } finally { db.close(); }
 }
-const rowKey = r => Object.values(r).map(v => String(v)).sort().join("\u0001");
-function same(a, b, ordered){
-  if (a.length !== b.length) return false;
-  const ka = a.map(rowKey), kb = b.map(rowKey);
+const rowKey = r => r.map(v => v === null ? "NULL" : (typeof v === "number" ? String(Math.round(v*1e6)/1e6) : String(v))).sort().join("\u0001");
+function sameResult(a, b, ordered){
+  if (a.values.length !== b.values.length) return false;
+  if (a.values.length && a.values[0].length !== b.values[0].length) return false;
+  const ka = a.values.map(rowKey), kb = b.values.map(rowKey);
   if (!ordered){ ka.sort(); kb.sort(); }
   return ka.every((k,i)=>k===kb[i]);
 }
-const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
-function renderTable(rows){
-  if (!rows.length) return '<p style="padding:10px;margin:0">Nenhuma linha encontrada. Confira os filtros do WHERE.</p>';
-  const cols = Object.keys(rows[0]);
-  return `<table><thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${
-    rows.map(r=>`<tr>${cols.map(c=>`<td>${esc(r[c] ?? "NULL")}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+// ===== Dica 1 (o caminho, sem código) de cada fase =====
+const PATHS = [
+ [ "Você quer todas as colunas, sem filtro nenhum. Só falta dizer de qual tabela.",
+   "Em vez do asterisco, liste só as colunas que interessam, separadas por vírgula.",
+   "Acrescente um filtro depois do FROM. Texto vai entre aspas simples e precisa ser idêntico ao que está na tabela.",
+   "São duas condições ao mesmo tempo: o dia certo e a saída depois das 22h. As duas precisam ser verdadeiras.",
+   "Primeiro filtre o dia do crime, depois ordene. Do maior horário para o menor é ordem decrescente.",
+   "Você não sabe em que ponto do texto a palavra aparece. Use uma busca por padrão que aceite qualquer coisa antes e depois dela.",
+   "Uma linha por pessoa: agrupe as visitas pelo id da pessoa e conte quantas linhas cada grupo tem.",
+   "O nome está em uma tabela e o horário em outra. Junte as duas pela coluna que as liga e só depois filtre o dia.",
+   "Mesma ideia da fase anterior, agora ligando as pessoas às compras e filtrando pelo item.",
+   "São três tabelas: pessoas ligada a visitas e também a compras, com três condições no filtro. Como alguém pode aparecer mais de uma vez, peça nomes sem repetição." ],
+ [ "Ordene os pedidos do maior cupom para o menor e fique só com as primeiras linhas.",
+   "Duas formas de pagamento valem, mas a condição do cupom vale sempre. Pense em como agrupar as condições para o “ou” não escapar do “e”.",
+   "Se o cupom é 70, o cliente pagou 30% do valor. Transforme isso numa conta com as colunas e arredonde o resultado.",
+   "São três faixas, testadas em ordem: a primeira condição verdadeira define o rótulo, e a última faixa pode ser o “senão”.",
+   "São duas colunas novas: uma troca o vazio por um texto, a outra escolhe entre dois textos conforme o cupom.",
+   "O problema são os espaços nas pontas e as maiúsculas. Use uma função dentro da outra: primeiro limpe, depois padronize.",
+   "Você precisa de duas contas com as datas: a hora do pedido e a diferença entre a entrega e o pedido. O filtro usa essa diferença.",
+   "Comece pelos entregadores e traga os pedidos de quem tiver. Quem não tiver nenhum pedido fica com as colunas do pedido vazias.",
+   "Uma linha por entregador: conte os pedidos e tire a média do cupom de cada grupo.",
+   "O agrupamento é o mesmo da fase anterior, mas agora o filtro olha para a média do grupo, não para as linhas.",
+   "Você não sabe a média de cor. Deixe uma consulta dentro da outra calcular esse número.",
+   "Etapa 1: uma tabela temporária com os minutos de cada entrega concluída. Etapa 2: conte, por entregador, as que ficaram abaixo de 10.",
+   "Agrupe por entregador, some os descontos em reais e, na mesma consulta, numere os grupos do maior desconto para o menor.",
+   "Filtre o entregador 3 e, em cada linha, traga o horário da linha anterior, com os pedidos em ordem de tempo.",
+   "Calcule o desconto de cada pedido e, ao lado, a soma desses descontos do primeiro pedido até a linha atual." ],
+ [ "Você quer a soma da tabela inteira ao lado de cada linha, sem juntar as linhas. Uma janela vazia cobre a tabela toda.",
+   "É igual à fase anterior, mas a soma precisa recomeçar a cada entregador.",
+   "Uma numeração que recomeça a cada entregador, seguindo os pontos do maior para o menor; a data desempata.",
+   "Window functions não entram no WHERE. Calcule a numeração numa etapa anterior e filtre depois, ficando com o número 1.",
+   "Some os pontos por entregador e, na mesma consulta, dê a posição pelo total. Empates repetem a posição e pulam a seguinte.",
+   "São duas colunas de posição com a mesma janela: uma que pula posições depois do empate e outra que não pula.",
+   "Para cada linha, pegue os pontos do dia anterior do mesmo entregador e subtraia. A janela precisa separar por entregador e seguir os dias.",
+   "É o contrário da fase anterior: em vez do dia anterior, olhe o próximo dia do mesmo entregador.",
+   "Filtre os dois entregadores e some os pontos de cada um, do primeiro dia até o dia da linha.",
+   "Tire a média dos pontos numa janela que anda junto com os dias: a linha atual e as duas anteriores. Depois arredonde.",
+   "Etapa 1: os pontos por entrega de cada registro e, ao lado, a média geral desse valor. Etapa 2: fique só com quem passa do dobro.",
+   "Etapa 1: só os registros possíveis. Etapa 2: o total por entregador e a posição sem buracos nos empates." ],
+ [ "Categorias sem repetição, de Z para A, e só as três primeiras.",
+   "Ordene por duas colunas: a segunda só decide a ordem quando a primeira empata.",
+   "Compare o tamanho do nome com o tamanho do nome limpo nas pontas. Só interessam as linhas em que eles são diferentes.",
+   "Padronize o nome em três passos (espaço duplo, pontas e maiúsculas), agrupe pelo resultado e filtre os grupos com mais de um cadastro.",
+   "São três contagens numa linha só: todas as linhas, só as que têm CNPJ, e nomes padronizados diferentes.",
+   "Troque tudo o que não for dígito por nada, usando um padrão de expressão regular.",
+   "Quebre a chave no @ e pegue a segunda parte. A contagem das partes começa em zero.",
+   "Descubra a posição do ponto no login, recorte o texto do início até antes dele e ajuste a inicial.",
+   "Tire o nome do dia e a hora do cadastro. O filtro fica com o que NÃO está entre 8h e 18h.",
+   "Uma linha por restaurante, com a menor e a maior data de pagamento, a distância em dias entre elas e a soma.",
+   "Separe a data da hora e some 30 dias a ela.",
+   "Corte cada data no primeiro dia do mês e agrupe por mês e por restaurante ao mesmo tempo.",
+   "Mantenha todos os repasses, mesmo os sem pedido. Os sem par ficam com as colunas do pedido vazias, e é por isso que você filtra.",
+   "Mantenha as linhas dos dois lados. Interessam as que ficaram sem par de um lado ou do outro.",
+   "Deixe uma consulta interna listar os logins de quem cadastrou restaurante sem CNPJ e use essa lista no filtro de funcionários.",
+   "Primeiro uma tabela com o total de cada restaurante; depois, a média desses totais.",
+   "Coloque no SELECT uma consulta que devolve um único número: a média de todos os repasses.",
+   "São duas janelas por restaurante: o maior valor e a soma. Na soma, a moldura precisa cobrir do primeiro ao último repasse." ]
+];
+CASES.forEach((k, ci) => k.levels.forEach((l, i) => { if (PATHS[ci] && PATHS[ci][i]) l.path = PATHS[ci][i]; }));
+
+// ===== Diagnóstico de respostas erradas =====
+const normVal = v => v === null ? "NULL" : (typeof v === "number" ? String(Math.round(v*1e6)/1e6) : String(v));
+function multisetDiff(a, b){
+  const pool = new Map(); b.forEach(k => pool.set(k, (pool.get(k)||0) + 1));
+  const extra = [];
+  a.forEach((k, idx) => { const n = pool.get(k) || 0; if (n > 0) pool.set(k, n-1); else extra.push(idx); });
+  let missing = 0; pool.forEach(n => { missing += n; });
+  return {extra, missing};
+}
+function columnProblem(name, uVals, eVals){
+  const code = `<code>${String(name).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}</code>`;
+  const join = arr => arr.slice().sort().join("\u0001");
+  if (join(uVals.map(normVal)) === join(eVals.map(normVal))) return null;
+  const isNum = arr => arr.every(v => typeof v === "number" || v === null);
+  if (isNum(uVals) && isNum(eVals)){
+    const a = uVals.filter(v => v !== null).sort((x,y) => x-y), b = eVals.filter(v => v !== null).sort((x,y) => x-y);
+    if (a.length === b.length && a.every((v,k) => Math.abs(v - b[k]) <= 0.051)) return `os valores de ${code} estão quase certos — parece diferença de arredondamento. Confira o ROUND e o número de casas.`;
+  }
+  const low = arr => join(arr.map(v => v === null ? "NULL" : String(v).toLowerCase()));
+  if (low(uVals) === low(eVals)) return `a coluna ${code} tem os textos certos, mas com maiúsculas e minúsculas diferentes.`;
+  const sp = arr => join(arr.map(v => v === null ? "NULL" : String(v).trim().replace(/\s+/g, " ").toLowerCase()));
+  if (sp(uVals) === sp(eVals)) return `a coluna ${code} tem os textos certos, mas com espaços sobrando ou faltando.`;
+  const nu = uVals.filter(v => v === null).length, ne = eVals.filter(v => v === null).length;
+  if (nu > ne) return `a coluna ${code} tem NULL onde deveria haver valor.`;
+  if (nu < ne) return `a coluna ${code} deveria ter ${ne} ${ne === 1 ? "valor NULL" : "valores NULL"} e tem ${nu}.`;
+  return `os valores da coluna ${code} não batem. Confira o cálculo ou a função usada nela.`;
+}
+function diagnose(r, exp){
+  const fmtCols = arr => arr.map(c => `<code>${String(c).replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]))}</code>`).join(", ");
+  const ec = exp.columns.map(c => c.toLowerCase()), uc = r.columns.map(c => c.toLowerCase());
+  const ne = exp.values.length, nr = r.values.length;
+  if (nr === 0 && ne > 0) return {msg:"Sua consulta não trouxe nenhuma linha. Confira os filtros: textos entre aspas precisam ser idênticos aos da tabela, inclusive maiúsculas e acentos. Num JOIN, confira se o tipo de JOIN não descartou as linhas que você procura.", marks:[]};
+  if (uc.length !== ec.length){
+    let m = `A pista pede ${ec.length} ${ec.length === 1 ? "coluna" : "colunas"} e sua consulta trouxe ${uc.length}.`;
+    const missing = exp.columns.filter((c,k) => !uc.includes(ec[k]));
+    const extra = r.columns.filter((c,k) => !ec.includes(uc[k]));
+    if (missing.length && missing.length < ec.length) m += ` Faltou: ${fmtCols(missing)}.`;
+    if (extra.length && extra.length < uc.length) m += ` Sobrou: ${fmtCols(extra)}.`;
+    return {msg:m, marks:[]};
+  }
+  const {extra, missing} = multisetDiff(r.values.map(rowKey), exp.values.map(rowKey));
+  const marks = extra.length < nr ? extra : [];
+  if (!extra.length && !missing) return {msg:"As linhas estão certas, mas a ordem não. Confira o ORDER BY e o desempate, se houver.", marks:[]};
+  if (nr === 0) return {msg:"Sua consulta não trouxe nenhuma linha. Confira os filtros: textos entre aspas precisam ser idênticos aos da tabela, inclusive maiúsculas e acentos.", marks:[]};
+  if (nr !== ne){
+    if (!missing) return {msg:`Vieram ${extra.length} ${extra.length === 1 ? "linha" : "linhas"} a mais (marcadas em vermelho). Falta alguma condição no filtro (WHERE ou HAVING), um LIMIT ou um DISTINCT.`, marks};
+    if (!extra.length) return {msg:`Faltam ${missing} ${missing === 1 ? "linha" : "linhas"}. Algum filtro está restritivo demais, ou o tipo de JOIN descartou linhas que deveriam ficar.`, marks:[]};
+    return {msg:`A consulta trouxe ${nr} ${nr === 1 ? "linha" : "linhas"} e a pista tem ${ne}. ${marks.length ? "As marcadas em vermelho não deveriam aparecer. " : ""}Confira os filtros e o agrupamento.`, marks};
+  }
+  const probs = [];
+  ec.forEach((c,k) => {
+    const ui = uc.indexOf(c) >= 0 ? uc.indexOf(c) : k;
+    const pr = columnProblem(exp.columns[k], r.values.map(v => v[ui]), exp.values.map(v => v[k]));
+    if (pr) probs.push(pr);
+  });
+  if (probs.length){
+    const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
+    return {msg:"Quase lá. " + cap(probs[0]) + (probs.length > 1 ? " Além disso, " + probs[1] : ""), marks};
+  }
+  return {msg:"Cada coluna tem os valores certos, mas combinados nas linhas erradas. Confira a condição do JOIN, o PARTITION BY ou a ordem dentro da janela.", marks};
+}
+if (typeof module !== "undefined") module.exports = {CASES, runQuery, sameResult, bqTranslate, diagnose, estimateScan, missingRequirement};
+
+
+let SQL = null;
+let caseIdx = 0;
+const expectedCache = {};
+const store = {
+  get(k){ try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : null; } catch(e){ return null; } },
+  set(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+};
+const freshState = () => ({current:0, solved:[], hints:[], hl:{}, qw:{}, xp:0, closed:false});
+const hintLvl = (st, i) => (st.hl && st.hl[i]) || (st.hints && st.hints.includes(i) ? 2 : 0);
+const hintBtnLabel = lv => lv === 0 ? "Ver dica: o caminho (−10 pontos)" : "Ver dica: o código (−15 pontos)";
+const states = CASES.map(k => Object.assign(freshState(), store.get(k.key) || {}));
+const prefs = store.get("detetive-sql-ui") || {};
+if (Number.isInteger(prefs.caseIdx) && prefs.caseIdx >= 0 && prefs.caseIdx < CASES.length) caseIdx = prefs.caseIdx;
+const K = () => CASES[caseIdx];
+const S = () => states[caseIdx];
+const save = () => { store.set(K().key, S()); store.set("detetive-sql-ui", {caseIdx}); };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmtBR = n => String(n);
+
+function expected(i){
+  const key = caseIdx + ":" + i;
+  if (!expectedCache[key]) expectedCache[key] = runQuery(SQL, K(), K().levels[i].sol);
+  return expectedCache[key];
 }
 
+function renderCases(){
+  document.getElementById("cases").innerHTML = CASES.map((k,i)=>{
+    const st = states[i];
+    return `<button data-c="${i}" aria-pressed="${i===caseIdx}">Caso ${i+1}: ${esc(k.title)}<span>${st.closed ? "Caso encerrado" : `${st.solved.length} de ${k.levels.length} pistas`}</span></button>`;
+  }).join("");
+  document.querySelectorAll("[data-c]").forEach(b => b.onclick = () => { caseIdx = +b.dataset.c; save(); render(); });
+  document.getElementById("intro").textContent = K().intro;
+  document.title = "Detetive SQL — " + K().title;
+}
 function renderTrail(){
-  const el = document.getElementById("trail");
-  const maxOpen = Math.max(...state.solved, -1) + 1;
-  el.innerHTML = LEVELS.map((l,i)=>`<button class="${state.solved.includes(i)?"done":""} ${i===state.current?"current":""}" ${i>maxOpen?"disabled":""} data-i="${i}" title="${esc(l.t)}" aria-label="Fase ${i+1}: ${esc(l.t)}">${i+1}</button>`).join("")
-    + `<button class="final ${state.current===LEVELS.length?"current":""} ${state.closed?"done":""}" ${state.solved.length<LEVELS.length?"disabled":""} data-i="${LEVELS.length}" title="Acusação final" aria-label="Acusação final">?</button>`;
-  el.querySelectorAll("button").forEach(b => b.onclick = () => { state.current = +b.dataset.i; save(); render(); });
-  document.getElementById("xp").textContent = state.xp;
-  document.getElementById("solved").textContent = state.solved.length;
-  document.getElementById("total").textContent = LEVELS.length;
+  const L = K().levels, st = S();
+  const maxOpen = Math.max(...st.solved, -1) + 1;
+  document.getElementById("trail").innerHTML = L.map((l,i)=>`<button class="${st.solved.includes(i)?"done":""} ${i===st.current?"current":""}" ${i>maxOpen?"disabled":""} data-i="${i}" title="${esc(l.t)}" aria-label="Fase ${i+1}: ${esc(l.t)}">${i+1}</button>`).join("")
+    + `<button class="final ${st.current===L.length?"current":""} ${st.closed?"done":""}" ${st.solved.length<L.length?"disabled":""} data-i="${L.length}" title="Acusação final" aria-label="Acusação final">?</button>`;
+  document.querySelectorAll("#trail button").forEach(b => b.onclick = () => { st.current = +b.dataset.i; save(); render(); });
+  document.getElementById("xp").textContent = st.xp;
+  document.getElementById("solved").textContent = st.solved.length;
+  document.getElementById("total").textContent = L.length;
 }
 function renderSchema(){
-  document.getElementById("schema").innerHTML = Object.entries(DATA).map(([n,t])=>
-    `<div class="tbl"><button data-ins="${n}" title="Inserir nome da tabela">${n}</button><ul>${t.cols.map(c=>`<li>${c}</li>`).join("")}</ul></div>`).join("");
+  document.getElementById("schema").innerHTML = Object.entries(K().tables).map(([n,t])=>
+    `<div class="tbl"><button data-ins="${n}" title="Inserir nome da tabela">${n}</button><ul>${t.cols.map(c=>`<li>${esc(c.split(" ")[0])}</li>`).join("")}</ul></div>`).join("");
   document.querySelectorAll("[data-ins]").forEach(b => b.onclick = () => insert(b.dataset.ins + " "));
+  document.getElementById("dialect").textContent = K().schemaNote ? K().schemaNote : caseIdx >= 1
+    ? "Funções como IF, EXTRACT, DATETIME_DIFF, SPLIT, FORMAT_DATE, DATE_TRUNC e DATE_ADD funcionam como no BigQuery das aulas."
+    : "Clique no nome de uma tabela para inseri-lo na consulta.";
 }
 function renderNotes(){
-  document.getElementById("notes").innerHTML = state.solved.length
-    ? LEVELS.filter((_,i)=>state.solved.includes(i)).map(l=>`<li>${l.note}</li>`).join("")
+  const st = S();
+  document.getElementById("notes").innerHTML = st.solved.length
+    ? K().levels.filter((_,i)=>st.solved.includes(i)).map(l=>`<li>${l.note}</li>`).join("")
     : "<li>Resolva a primeira fase para registrar sua primeira pista.</li>";
 }
 function insert(txt){
@@ -286,125 +1256,222 @@ function insert(txt){
   ta.value = ta.value.slice(0,s) + txt + ta.value.slice(e);
   ta.focus(); ta.selectionStart = ta.selectionEnd = s + txt.length;
 }
+function renderTable(r, marks){
+  if (!r.values.length) return '<p style="padding:10px;margin:0">Nenhuma linha encontrada. Confira os filtros.</p>';
+  const mk = new Set(marks || []);
+  return `<table><thead><tr>${r.columns.map(c=>`<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${
+    r.values.map((row,idx)=>`<tr${mk.has(idx) ? ' class="extra"' : ""}>${row.map(v=> v === null ? `<td class="null">NULL</td>` : `<td>${esc(v)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+}
 
 function renderLevel(i){
-  const l = LEVELS[i];
-  const solved = state.solved.includes(i);
+  if (K().levels[i].type === "quiz") return renderQuiz(i);
+  const l = K().levels[i], st = S();
+  const solved = st.solved.includes(i), last = i === K().levels.length - 1;
   document.getElementById("main").innerHTML = `
     <div class="mission">
       <h2>${i+1}. ${l.t}</h2>
-      <span class="concept">${l.c}</span>
+      <div class="tags"><span class="concept">${l.c}</span>${l.a ? `<span class="aula">${l.a}</span>` : ""}</div>
       <p class="story">${l.story}</p>
       <div class="task">${l.task}</div>
-      <div class="hint" id="hint" ${state.hints.includes(i)?"":"hidden"}>Dica: ${l.hint}</div>
+      <div class="hint" id="hint1" ${hintLvl(st,i)>=1?"":"hidden"}><b>Dica 1, o caminho:</b> ${l.path}</div>
+      <div class="hint" id="hint2" ${hintLvl(st,i)>=2?"":"hidden"}><b>Dica 2, o código:</b> ${l.hint}</div>
     </div>
     <div class="chips" aria-label="Atalhos de SQL">
-      ${["SELECT","*","FROM","WHERE","AND","LIKE '%%'","ORDER BY","DESC","COUNT(*)","GROUP BY","JOIN","ON","DISTINCT","AS"].map(k=>`<button data-k="${esc(k)}">${esc(k)}</button>`).join("")}
+      ${K().chips.map(k=>`<button data-k="${esc(k)}">${esc(k)}</button>`).join("")}
     </div>
     <label for="sql" class="kbd">Sua consulta</label>
     <textarea id="sql" spellcheck="false" autocapitalize="off" autocorrect="off">${esc(l.start ?? "")}</textarea>
     <div class="actions">
       <button class="btn primary" id="run">Executar consulta</button>
-      <button class="btn ghost" id="hintBtn" ${state.hints.includes(i)?"hidden":""}>Ver dica (−25 pontos)</button>
-      ${solved && i < LEVELS.length-1 ? `<button class="btn ghost" id="next">Próxima fase</button>` : ""}
-      ${solved && i === LEVELS.length-1 ? `<button class="btn ghost" id="next">Fazer a acusação</button>` : ""}
+      <button class="btn ghost" id="hintBtn" ${hintLvl(st,i)>=2?"hidden":""}>${hintBtnLabel(hintLvl(st,i))}</button>
+      ${solved ? `<button class="btn ghost" id="next">${last ? (K().accuse.cta || "Fazer a acusação") : "Próxima fase"}</button>` : ""}
       <span class="kbd">Ctrl + Enter também executa</span>
     </div>
     <div class="feedback" id="fb"></div>
     <div class="result" id="res"></div>
-    <div class="rowcount" id="rc"></div>`;
+    <div class="rowcount" id="rc"></div>
+    <div class="meter" id="meter" hidden></div>`;
   document.querySelectorAll("[data-k]").forEach(b => b.onclick = () => insert(b.dataset.k + " "));
   const ta = document.getElementById("sql");
   ta.addEventListener("keydown", e => { if ((e.ctrlKey||e.metaKey) && e.key === "Enter"){ e.preventDefault(); check(i); }});
   document.getElementById("run").onclick = () => check(i);
   document.getElementById("hintBtn").onclick = () => {
-    if (!state.hints.includes(i)) state.hints.push(i);
-    save(); document.getElementById("hint").hidden = false; document.getElementById("hintBtn").hidden = true;
+    st.hl = st.hl || {};
+    const lv = Math.min(2, hintLvl(st,i) + 1);
+    st.hl[i] = lv; save();
+    document.getElementById("hint1").hidden = false;
+    if (lv >= 2) document.getElementById("hint2").hidden = false;
+    const hb = document.getElementById("hintBtn");
+    if (lv >= 2) hb.hidden = true; else hb.textContent = hintBtnLabel(lv);
   };
-  const nx = document.getElementById("next"); if (nx) nx.onclick = () => { state.current = i+1; save(); render(); };
+  const nx = document.getElementById("next"); if (nx) nx.onclick = () => { st.current = i+1; save(); render(); };
+}
+
+const fmtGB = n => n.toLocaleString("pt-BR", {minimumFractionDigits: n < 1 ? 2 : 1, maximumFractionDigits: n < 1 ? 2 : 1}) + " GB";
+function renderMeter(el, est, budget){
+  if (!est){ el.hidden = true; return; }
+  el.hidden = false;
+  const pct = Math.max(1, Math.min(100, est.gb / est.fullGb * 100));
+  const over = budget != null && est.gb > budget + 1e-9;
+  const mark = budget != null ? `<i style="left:${Math.min(99.5, budget / est.fullGb * 100)}%" title="Orçamento"></i>` : "";
+  el.innerHTML = `<div class="meter-top"><span>Bytes processados na tabela real (estimativa)</span><b>${fmtGB(est.gb)}</b></div>
+    <div class="bar"><span class="${over ? "over" : ""}" style="width:${pct}%"></span>${mark}</div>
+    <div class="meter-sub">Lê ${est.parts} de ${est.months} partições. A tabela inteira tem ${fmtGB(est.fullGb)}.${budget != null ? ` Orçamento desta fase: ${fmtGB(budget)}.` : ""}</div>`;
+}
+function budgetMsg(est, budget){
+  let m = `O resultado está certo, mas a consulta processaria ${fmtGB(est.gb)} na tabela real, e o orçamento desta fase é ${fmtGB(budget)}. `;
+  if (est.star) m += "Você leu todas as colunas com SELECT *: liste só as que a pergunta usa.";
+  else if (est.fnTrap) m += "Há uma função em volta de <code>data_pedido</code> no WHERE. Isso impede o BigQuery de pular as partições: compare a coluna direto com as datas.";
+  else if (est.parts === est.months) m += "A consulta lê todas as partições. Filtre direto pela coluna de partição (<code>data_pedido</code>) com as datas de início e fim.";
+  else m += "Leia menos colunas ou um intervalo de datas menor.";
+  return m;
+}
+
+function renderQuiz(i){
+  const l = K().levels[i], st = S();
+  st.qw = st.qw || {};
+  const tried = st.qw[i] || [];
+  const solved = st.solved.includes(i), last = i === K().levels.length - 1;
+  const okIdx = l.opts.findIndex(o => o.ok);
+  document.getElementById("main").innerHTML = `
+    <div class="mission">
+      <h2>${i+1}. ${l.t}</h2>
+      <div class="tags"><span class="concept">${l.c}</span>${l.a ? `<span class="aula">${l.a}</span>` : ""}<span class="aula">Múltipla escolha</span></div>
+      <p class="story">${l.story}</p>
+      <div class="task">${l.q}</div>
+    </div>
+    <div class="options">${l.opts.map((o,k)=>`<button data-o="${k}" class="${solved && k === okIdx ? "right" : tried.includes(k) ? "wrong" : ""}" ${solved ? "disabled" : ""}>${o.t}</button>`).join("")}</div>
+    <div class="actions">${solved ? `<button class="btn ghost" id="next">${last ? (K().accuse.cta || "Fazer a acusação") : "Próxima fase"}</button>` : ""}</div>
+    <div class="feedback ${solved ? "ok" : ""}" id="fb">${solved ? "<strong>Resposta certa.</strong> " + l.note : ""}</div>`;
+  const goNext = () => { st.current = i+1; save(); render(); };
+  const nx = document.getElementById("next"); if (nx) nx.onclick = goNext;
+  document.querySelectorAll("[data-o]").forEach(b => b.onclick = () => {
+    if (st.solved.includes(i)) return;
+    const k = +b.dataset.o, o = l.opts[k], fb = document.getElementById("fb");
+    if (o.ok){
+      const pts = Math.max(50, 100 - 25 * tried.length);
+      st.solved.push(i); st.xp += pts; save();
+      b.classList.add("right");
+      document.querySelectorAll("[data-o]").forEach(x => x.disabled = true);
+      fb.className = "feedback ok"; fb.innerHTML = `<strong>Resposta certa! +${pts} pontos.</strong> ${l.note}`;
+      renderTrail(); renderNotes(); renderCases();
+      const acts = document.querySelector(".actions");
+      const nb = document.createElement("button");
+      nb.className = "btn ghost"; nb.id = "next";
+      nb.textContent = last ? (K().accuse.cta || "Fazer a acusação") : "Próxima fase";
+      nb.onclick = goNext; acts.appendChild(nb);
+    } else {
+      if (!tried.includes(k)) tried.push(k);
+      st.qw[i] = tried; save();
+      b.classList.add("wrong");
+      fb.className = "feedback err"; fb.innerHTML = `${o.why} Tente outra opção.`;
+    }
+  });
+}
+
+function explainError(msg){
+  let m = String(msg || "erro desconhecido");
+  const col = m.match(/no such column: ([\w.]+)/);
+  if (col) return `A coluna <code>${esc(col[1])}</code> não existe. Confira o nome no arquivo do caso. Apelidos criados com AS não podem ser usados no WHERE nem dentro de OVER — repita a expressão.`;
+  const tb = m.match(/no such table: ([\w.]+)/);
+  if (tb) return `A tabela <code>${esc(tb[1])}</code> não existe. As tabelas deste caso estão no arquivo ao lado.`;
+  if (/misuse of window function/i.test(m)) return "Window functions (ROW_NUMBER, RANK, LAG…) não podem ser usadas no WHERE. Calcule a janela dentro de uma CTE e filtre na consulta de fora.";
+  if (/misuse of aggregate/i.test(m)) return "Uma agregação (SUM, AVG, COUNT…) foi usada no lugar errado. Para filtrar grupos, use HAVING depois do GROUP BY.";
+  if (/syntax error/i.test(m)) return `Erro de sintaxe (${esc(m)}). Confira vírgulas, parênteses e aspas simples.`;
+  if (/^Use uma consulta|^Execute uma|^Escreva/.test(m)) return esc(m);
+  return "Erro na consulta: " + esc(m);
 }
 
 function check(i){
-  const l = LEVELS[i], fb = document.getElementById("fb"), res = document.getElementById("res"), rc = document.getElementById("rc");
-  let rows;
-  try { rows = runSql(document.getElementById("sql").value); }
-  catch(e){
-    fb.className = "feedback err";
-    fb.textContent = "Erro na consulta: " + (e.message || e) + " Confira nomes de tabelas e colunas no arquivo do caso.";
-    res.style.display = "none"; rc.textContent = ""; return;
-  }
-  res.style.display = "block"; res.innerHTML = renderTable(rows);
-  rc.textContent = rows.length + (rows.length === 1 ? " linha" : " linhas");
-  const expected = runSql(l.sol);
-  if (same(rows, expected, l.ordered)){
-    const first = !state.solved.includes(i);
+  const l = K().levels[i], st = S();
+  const fb = document.getElementById("fb"), res = document.getElementById("res"), rc = document.getElementById("rc");
+  let r;
+  const sqlText = document.getElementById("sql").value;
+  const meter = document.getElementById("meter");
+  try { r = runQuery(SQL, K(), sqlText); }
+  catch(e){ fb.className = "feedback err"; fb.innerHTML = explainError(e.message); res.style.display = "none"; rc.textContent = ""; if (meter) meter.hidden = true; return; }
+  const est = estimateScan(K(), sqlText);
+  if (meter) renderMeter(meter, est, l.budget);
+  const exp = expected(i);
+  const sameRows = sameResult(r, exp, l.ordered);
+  const overBudget = sameRows && l.budget != null && est && est.gb > l.budget + 1e-9;
+  const req = sameRows && !overBudget ? missingRequirement(l, sqlText) : null;
+  const ok = sameRows && !overBudget && !req;
+  const diag = ok ? {msg:"", marks:[]} : overBudget ? {msg:budgetMsg(est, l.budget), marks:[]} : req ? {msg:"O resultado está certo, mas falta um detalhe. " + req.msg, marks:[]} : diagnose(r, exp);
+  res.style.display = "block"; res.innerHTML = renderTable(r, diag.marks);
+  rc.textContent = r.values.length + (r.values.length === 1 ? " linha" : " linhas");
+  if (ok){
+    const first = !st.solved.includes(i);
+    let msg = "<strong>Correto de novo.</strong> ";
     if (first){
-      const pts = state.hints.includes(i) ? 75 : 100;
-      state.solved.push(i); state.xp += pts; save();
-      fb.className = "feedback ok";
-      fb.innerHTML = `<strong>Pista encontrada! +${pts} pontos.</strong> ${l.note}`;
-    } else {
-      fb.className = "feedback ok"; fb.innerHTML = `<strong>Correto de novo.</strong> ${l.note}`;
+      const lv = hintLvl(st,i); const pts = 100 - (lv >= 1 ? 10 : 0) - (lv >= 2 ? 15 : 0);
+      st.solved.push(i); st.xp += pts; save();
+      msg = `<strong>Pista encontrada! +${pts} pontos.</strong> `;
     }
-    renderTrail(); renderNotes();
-    const acts = document.querySelector(".actions");
+    fb.className = "feedback ok"; fb.innerHTML = msg + l.note;
+    renderTrail(); renderNotes(); renderCases();
     if (!document.getElementById("next")){
+      const acts = document.querySelector(".actions");
       const b = document.createElement("button");
       b.className = "btn ghost"; b.id = "next";
-      b.textContent = i < LEVELS.length-1 ? "Próxima fase" : "Fazer a acusação";
-      b.onclick = () => { state.current = i+1; save(); render(); };
+      b.textContent = i < K().levels.length-1 ? "Próxima fase" : (K().accuse.cta || "Fazer a acusação");
+      b.onclick = () => { st.current = i+1; save(); render(); };
       acts.insertBefore(b, acts.querySelector(".kbd"));
     }
   } else {
     fb.className = "feedback err";
-    let why = `A consulta rodou, mas o resultado não bate com a pista. Esperava ${expected.length} ${expected.length===1?"linha":"linhas"} e veio ${rows.length}.`;
-    if (rows.length === expected.length && l.ordered && same(rows, expected, false)) why = "As linhas estão certas, mas a ordem não. Confira o ORDER BY.";
-    else if (rows.length === expected.length) why += " Confira se escolheu as colunas pedidas.";
-    fb.textContent = why;
+    fb.innerHTML = diag.msg;
   }
 }
 
 function renderFinal(){
-  const main = document.getElementById("main");
-  if (state.solved.length < LEVELS.length){ state.current = 0; return render(); }
-  const ppl = DATA.pessoas.rows;
-  main.innerHTML = `
-    <div class="mission">
-      <h2>A acusação</h2>
-      <p class="story">Suas consultas reduziram a lista a dois nomes: <b>Rafael Nunes</b> e <b>Caio Ferraz</b>. Releia suas anotações — um depoimento descreve quem saiu pelos fundos. Quem levou o diamante?</p>
-    </div>
-    <div class="suspects">${ppl.map(p=>`<button data-p="${p[0]}">${esc(p[1])}<span>${esc(p[4])}, ${esc(p[3])}</span></button>`).join("")}</div>
+  const k = K(), st = S(), a = k.accuse;
+  if (st.solved.length < k.levels.length){ st.current = 0; return render(); }
+  const opts = a.options || k.tables[a.table].rows.map(p => ({id:p[a.idCol], name:p[a.nameCol], sub:a.sub(p)}));
+  document.getElementById("main").innerHTML = `
+    <div class="mission"><h2>${a.heading || "A acusação"}</h2><p class="story">${a.prompt}</p></div>
+    <div class="suspects">${opts.map(o=>`<button data-p="${o.id}">${esc(o.name)}<span>${esc(o.sub)}</span></button>`).join("")}</div>
     <div id="verdict"></div>`;
-  if (state.closed) showVerdict();
-  main.querySelectorAll("[data-p]").forEach(b => b.onclick = () => {
-    if (+b.dataset.p === CULPRIT){
-      if (!state.closed){ state.closed = true; state.xp += 200; save(); renderTrail(); }
+  if (st.closed) showVerdict();
+  document.querySelectorAll("[data-p]").forEach(b => b.onclick = () => {
+    const id = +b.dataset.p;
+    if (id === a.culprit){
+      if (!st.closed){ st.closed = true; st.xp += 200; save(); renderTrail(); renderCases(); }
       showVerdict();
     } else {
       b.classList.add("wrong");
-      document.getElementById("verdict").innerHTML = `<div class="feedback err" style="display:block">${esc(b.firstChild.textContent)} tem um álibi nas evidências. Releia as anotações e tente de novo.</div>`;
+      const why = (a.wrongById && a.wrongById[id]) || a.wrong;
+      document.getElementById("verdict").innerHTML = `<div class="feedback err" style="display:block">${esc(b.firstChild.textContent)} ${why} Tente de novo.</div>`;
     }
   });
 }
 function showVerdict(){
-  document.querySelector(`[data-p="${CULPRIT}"]`).classList.add("right");
+  const a = K().accuse;
+  document.querySelector(`[data-p="${a.culprit}"]`).classList.add("right");
+  const nextIdx = states.findIndex((st, i) => i !== caseIdx && !st.closed);
+  const other = nextIdx >= 0 ? `<button class="btn primary" id="goNext">Abrir o caso ${nextIdx+1}</button>` : "";
   document.getElementById("verdict").innerHTML = `
-    <div class="stamp">Caso encerrado</div>
-    <p class="story">Caio Ferraz, o fotógrafo, fotografou as câmeras de segurança na semana anterior, comprou luvas de couro, saiu às 23:15 no dia do crime e foi visto com uma bolsa de câmera pelos fundos. O diamante estava escondido nela.</p>
-    <p class="story">Você usou SELECT, WHERE, AND, ORDER BY, LIKE, COUNT, GROUP BY, JOIN e DISTINCT. Pontuação final: <b>${state.xp}</b>.</p>`;
+    <div class="stamp">${a.stamp || "Caso encerrado"}</div>
+    <p class="story">${a.verdict}</p>
+    <p class="story">Você usou ${a.learned}. Pontuação final: <b>${S().xp}</b>.</p>${other}`;
+  const g = document.getElementById("goNext"); if (g) g.onclick = () => { caseIdx = nextIdx; save(); render(); };
 }
 
 function render(){
-  renderTrail(); renderSchema(); renderNotes();
-  if (state.current >= LEVELS.length) renderFinal(); else renderLevel(state.current);
+  renderCases(); renderTrail(); renderSchema(); renderNotes();
+  if (S().current >= K().levels.length) renderFinal(); else renderLevel(S().current);
 }
 document.getElementById("resetBtn").onclick = () => {
-  if (!confirm("Apagar todo o progresso e recomeçar o caso?")) return;
-  state = {current:0, solved:[], hints:[], xp:0, closed:false}; save(); render();
+  if (!confirm("Apagar o progresso deste caso e recomeçar?")) return;
+  states[caseIdx] = freshState(); save(); render();
 };
-if (typeof alasql === "undefined"){
-  document.getElementById("main").innerHTML = '<p>O motor de SQL não carregou. Recarregue a página para tentar de novo.</p>';
-} else render();
+
+if (typeof initSqlJs === "undefined"){
+  document.getElementById("main").innerHTML = "<p>O motor de SQL não carregou. Confira a conexão e recarregue a página.</p>";
+} else {
+  initSqlJs().then(s => { SQL = s; render(); })
+    .catch(() => { document.getElementById("main").innerHTML = "<p>O motor de SQL não iniciou neste navegador. Recarregue a página para tentar de novo.</p>"; });
+}
 </script>
 </body>
 </html>
