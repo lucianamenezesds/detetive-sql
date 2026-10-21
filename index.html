@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Detetive SQL — O caso do diamante</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/alasql@4.4.0/dist/alasql.min.js"></script>
+<style>
+:root{
+  --bg:#E6EAF0; --paper:#F7F8FA; --ink:#1B2A4A; --muted:#5A6782; --line:#C9D1DD;
+  --pin:#B8322A; --mark:#F2D14B; --ok:#1F7A4D; --code-bg:#1B2A4A; --code-fg:#E8ECF4;
+  --chip:#DCE2EB;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#111829; --paper:#18223A; --ink:#E4E9F2; --muted:#9AA6BF; --line:#2C3956;
+    --pin:#E0574C; --mark:#E8C547; --ok:#4CC08A; --code-bg:#0C1220; --code-fg:#E4E9F2;
+    --chip:#24304D;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#111829; --paper:#18223A; --ink:#E4E9F2; --muted:#9AA6BF; --line:#2C3956;
+  --pin:#E0574C; --mark:#E8C547; --ok:#4CC08A; --code-bg:#0C1220; --code-fg:#E4E9F2;
+  --chip:#24304D;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px}
+h1{font-family:"Special Elite","Courier New",monospace;font-weight:400;font-size:clamp(1.7rem,4vw,2.5rem);line-height:1.1;margin:0;letter-spacing:.01em}
+.sub{color:var(--muted);margin:4px 0 0;font-size:.95rem}
+.stats{display:flex;gap:18px;font-size:.92rem;color:var(--muted)}
+.stats b{color:var(--ink);font-size:1.15rem;font-weight:600}
+.trail{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+.trail button{width:38px;height:38px;border-radius:50%;border:2px solid var(--line);background:var(--paper);color:var(--muted);font:500 .9rem "IBM Plex Mono",ui-monospace,monospace;cursor:pointer}
+.trail button.done{border-color:var(--ok);color:var(--ok)}
+.trail button.current{border-color:var(--pin);background:var(--pin);color:#fff}
+.trail button:disabled{opacity:.4;cursor:not-allowed}
+.trail button.final{border-style:dashed}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:18px}
+.mission h2{font-family:"Special Elite","Courier New",monospace;font-weight:400;font-size:1.45rem;margin:0 0 6px}
+.mission .concept{display:inline-block;background:var(--mark);color:#1B2A4A;padding:1px 8px;border-radius:3px;font:500 .82rem "IBM Plex Mono",ui-monospace,monospace;margin-bottom:10px}
+.story{max-width:68ch;margin:0 0 10px}
+.task{border-left:4px solid var(--pin);padding:6px 12px;margin:12px 0;max-width:68ch}
+.hint{margin-top:8px;font-size:.93rem;color:var(--muted);max-width:68ch}
+.hint code,.story code,.task code{font-family:"IBM Plex Mono",ui-monospace,monospace;background:var(--chip);padding:0 4px;border-radius:3px;font-size:.88em}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 8px}
+.chips button{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:4px;padding:4px 9px;font:500 .8rem "IBM Plex Mono",ui-monospace,monospace;cursor:pointer}
+textarea{width:100%;min-height:130px;resize:vertical;background:var(--code-bg);color:var(--code-fg);border:none;border-radius:6px;padding:14px;font:15px/1.5 "IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;caret-color:var(--mark)}
+textarea:focus-visible,button:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
+.btn{border:none;border-radius:5px;padding:10px 16px;font:600 .95rem "IBM Plex Sans",system-ui,sans-serif;cursor:pointer}
+.btn.primary{background:var(--pin);color:#fff}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.kbd{font-size:.8rem;color:var(--muted)}
+.feedback{margin-top:14px;padding:10px 14px;border-radius:5px;display:none;max-width:72ch}
+.feedback.ok{display:block;background:color-mix(in srgb,var(--ok) 15%,transparent);border:1px solid var(--ok)}
+.feedback.err{display:block;background:color-mix(in srgb,var(--pin) 12%,transparent);border:1px solid var(--pin)}
+.feedback.info{display:block;background:var(--chip);border:1px solid var(--line)}
+.result{margin-top:14px;overflow-x:auto;max-height:340px;overflow-y:auto;border:1px solid var(--line);border-radius:5px;display:none}
+table{border-collapse:collapse;width:100%;font:.88rem "IBM Plex Mono",ui-monospace,monospace}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--chip);position:sticky;top:0}
+.rowcount{font-size:.82rem;color:var(--muted);margin-top:6px}
+aside h3{font-family:"Special Elite","Courier New",monospace;font-weight:400;font-size:1.15rem;margin:0 0 10px}
+.tbl{margin-bottom:12px}
+.tbl button{background:none;border:none;color:var(--ink);font:600 .95rem "IBM Plex Mono",ui-monospace,monospace;padding:0;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.tbl ul{list-style:none;margin:4px 0 0;padding:0 0 0 12px;font:.82rem "IBM Plex Mono",ui-monospace,monospace;color:var(--muted)}
+.notes{margin-top:16px;border-top:1px dashed var(--line);padding-top:12px;font-size:.9rem}
+.notes ol{padding-left:18px;margin:6px 0 0}
+.notes li{margin-bottom:4px}
+.suspects{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:14px}
+.suspects button{text-align:left;background:var(--paper);border:2px solid var(--line);border-radius:6px;padding:10px 12px;cursor:pointer;color:var(--ink);font:inherit}
+.suspects button span{display:block;color:var(--muted);font-size:.85rem}
+.suspects button.wrong{border-color:var(--pin);opacity:.55}
+.suspects button.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,transparent)}
+.stamp{display:inline-block;font-family:"Special Elite","Courier New",monospace;color:var(--pin);border:3px solid var(--pin);padding:4px 14px;transform:rotate(-4deg);font-size:1.6rem;margin:14px 0}
+@media (prefers-reduced-motion:no-preference){.stamp{animation:stamp .35s ease-out}}
+@keyframes stamp{from{transform:rotate(-4deg) scale(1.8);opacity:0}to{transform:rotate(-4deg) scale(1);opacity:1}}
+.reset{margin-top:14px;font-size:.82rem}
+.reset button{background:none;border:none;color:var(--muted);text-decoration:underline;cursor:pointer;padding:0;font:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Detetive SQL</h1>
+      <p class="sub">O diamante do Museu Aurora sumiu. Só as consultas certas vão revelar quem levou.</p>
+    </div>
+    <div class="stats">
+      <div>Pontos <b id="xp">0</b></div>
+      <div>Pistas resolvidas <b id="solved">0</b>/<span id="total">0</span></div>
+    </div>
+  </header>
+
+  <nav class="trail" id="trail" aria-label="Fases do caso"></nav>
+
+  <div class="grid">
+    <main class="panel" id="main"></main>
+    <aside class="panel">
+      <h3>Arquivo do caso</h3>
+      <div id="schema"></div>
+      <div class="notes">
+        <strong>Anotações do detetive</strong>
+        <ol id="notes"></ol>
+      </div>
+      <div class="reset"><button id="resetBtn">Recomeçar o caso do zero</button></div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const DATA = {
+  pessoas: {
+    cols:["id","nome","idade","cidade","profissao"],
+    rows:[
+      [1,"Helena Duarte",34,"Porto Claro","curadora"],
+      [2,"Marcos Vieira",41,"Vila Serena","segurança"],
+      [3,"Júlia Ramos",28,"Porto Claro","restauradora"],
+      [4,"Otávio Lima",52,"Monte Alto","colecionador"],
+      [5,"Bianca Torres",23,"Porto Claro","estagiária"],
+      [6,"Rafael Nunes",37,"Vila Serena","eletricista"],
+      [7,"Sofia Mendes",45,"Monte Alto","guia"],
+      [8,"Caio Ferraz",30,"Porto Claro","fotógrafo"]
+    ]
+  },
+  visitas: {
+    cols:["id","pessoa_id","dia","hora_entrada","hora_saida"],
+    rows:[
+      [1,1,"2026-10-13","08:00","18:00"],[2,1,"2026-10-14","08:00","19:30"],
+      [3,2,"2026-10-14","18:00","23:50"],[4,3,"2026-10-14","09:00","17:00"],
+      [5,4,"2026-10-12","14:00","16:00"],[6,4,"2026-10-14","15:00","16:30"],
+      [7,6,"2026-10-14","20:00","22:40"],[8,7,"2026-10-13","10:00","15:00"],
+      [9,8,"2026-10-14","21:00","23:15"],[10,5,"2026-10-13","09:00","17:00"],
+      [11,6,"2026-10-11","10:00","12:00"]
+    ]
+  },
+  depoimentos: {
+    cols:["id","pessoa_id","texto"],
+    rows:[
+      [1,1,"Saí antes das 20h, o alarme ainda estava ligado."],
+      [2,2,"Fiz a ronda às 22h e ouvi passos perto da sala do diamante."],
+      [3,7,"Na semana passada vi alguém fotografando as câmeras de segurança."],
+      [4,3,"Encontrei marcas de luvas na vitrine pela manhã."],
+      [5,6,"Consertei a fiação da ala leste até umas 22h30."],
+      [6,5,"Vi uma pessoa com uma bolsa de câmera saindo pelos fundos tarde da noite."]
+    ]
+  },
+  compras: {
+    cols:["id","pessoa_id","item","valor","dia"],
+    rows:[
+      [1,6,"luvas de látex",18.9,"2026-10-13"],[2,2,"lanterna",45,"2026-10-10"],
+      [3,8,"luvas de couro",89.9,"2026-10-12"],[4,4,"lupa",120,"2026-10-09"],
+      [5,3,"pincel",15.5,"2026-10-11"],[6,1,"café",7,"2026-10-14"]
+    ]
+  }
+};
+
+const LEVELS = [
+  {t:"Os suspeitos",c:"SELECT *",
+   story:"Bem-vindo, detetive. Antes de qualquer coisa, conheça todas as pessoas ligadas ao museu.",
+   task:"Mostre <b>todas as colunas</b> de <b>todas as pessoas</b> da tabela <code>pessoas</code>.",
+   hint:"<code>SELECT *</code> traz todas as colunas. Depois vem <code>FROM</code> e o nome da tabela.",
+   sol:"SELECT * FROM pessoas", start:"SELECT ", note:"Oito pessoas tinham acesso ao museu."},
+  {t:"Só o essencial",c:"SELECT colunas",
+   story:"A lista está grande demais para o quadro de cortiça. Você só precisa de nome e profissão.",
+   task:"Liste apenas as colunas <code>nome</code> e <code>profissao</code> da tabela <code>pessoas</code>.",
+   hint:"Separe as colunas por vírgula: <code>SELECT nome, profissao FROM ...</code>",
+   sol:"SELECT nome, profissao FROM pessoas", note:"Há um fotógrafo, um eletricista e um segurança na lista."},
+  {t:"Moradores locais",c:"WHERE",
+   story:"O ladrão parecia conhecer bem a cidade. Vale filtrar quem mora em Porto Claro.",
+   task:"Mostre todas as colunas das pessoas cuja <code>cidade</code> é <b>'Porto Claro'</b>.",
+   hint:"Use <code>WHERE cidade = 'Porto Claro'</code>. Textos vão entre aspas simples.",
+   sol:"SELECT * FROM pessoas WHERE cidade = 'Porto Claro'", note:"Quatro suspeitos moram em Porto Claro."},
+  {t:"A noite do crime",c:"WHERE + AND",
+   story:"O diamante sumiu no dia <b>2026-10-14</b>, depois das 22h. Quem ainda estava no museu?",
+   task:"Na tabela <code>visitas</code>, mostre todas as colunas das visitas do dia <b>'2026-10-14'</b> com <code>hora_saida</code> <b>maior que '22:00'</b>.",
+   hint:"Combine duas condições com <code>AND</code>: <code>WHERE dia = '...' AND hora_saida > '22:00'</code>",
+   sol:"SELECT * FROM visitas WHERE dia = '2026-10-14' AND hora_saida > '22:00'", note:"Três pessoas (ids 2, 6 e 8) saíram depois das 22h no dia do crime."},
+  {t:"Linha do tempo",c:"ORDER BY",
+   story:"Monte a linha do tempo das saídas no dia do crime, da última para a primeira.",
+   task:"Mostre <code>pessoa_id</code> e <code>hora_saida</code> das visitas do dia <b>'2026-10-14'</b>, ordenadas por <code>hora_saida</code> em ordem <b>decrescente</b>.",
+   hint:"No final da consulta: <code>ORDER BY hora_saida DESC</code>",
+   sol:"SELECT pessoa_id, hora_saida FROM visitas WHERE dia = '2026-10-14' ORDER BY hora_saida DESC", ordered:true, note:"O segurança (id 2) foi o último a sair, às 23:50."},
+  {t:"Palavras-chave",c:"LIKE",
+   story:"Testemunhas mencionaram uma câmera. Procure nos depoimentos.",
+   task:"Mostre todas as colunas dos <code>depoimentos</code> cujo <code>texto</code> contém a palavra <b>câmera</b>.",
+   hint:"<code>LIKE '%câmera%'</code> encontra o texto em qualquer posição. O <code>%</code> significa “qualquer coisa”.",
+   sol:"SELECT * FROM depoimentos WHERE texto LIKE '%câmera%'", note:"Alguém com uma bolsa de câmera saiu pelos fundos tarde da noite."},
+  {t:"Frequentadores",c:"COUNT + GROUP BY",
+   story:"Quem visita o museu com frequência conhece as rotinas. Conte as visitas de cada pessoa.",
+   task:"Mostre <code>pessoa_id</code> e a <b>quantidade de visitas</b> de cada pessoa na tabela <code>visitas</code>.",
+   hint:"<code>SELECT pessoa_id, COUNT(*) AS qtd FROM visitas GROUP BY pessoa_id</code> — o GROUP BY junta as linhas de cada pessoa.",
+   sol:"SELECT pessoa_id, COUNT(*) AS qtd FROM visitas GROUP BY pessoa_id", note:"Helena, Otávio e Rafael visitaram o museu duas vezes."},
+  {t:"Nomes no registro",c:"JOIN",
+   story:"Ids não dizem muito. Cruze as visitas com as pessoas para ver os nomes.",
+   task:"Mostre o <code>nome</code> da pessoa e a <code>hora_saida</code> de todas as visitas do dia <b>'2026-10-14'</b>.",
+   hint:"<code>FROM pessoas p JOIN visitas v ON p.id = v.pessoa_id</code> e depois <code>WHERE v.dia = '2026-10-14'</code>",
+   sol:"SELECT p.nome, v.hora_saida FROM pessoas p JOIN visitas v ON p.id = v.pessoa_id WHERE v.dia = '2026-10-14'", note:"Marcos, Rafael e Caio estavam no museu depois das 22h."},
+  {t:"Compras suspeitas",c:"JOIN + LIKE",
+   story:"A restauradora achou marcas de luvas na vitrine. Quem comprou luvas recentemente?",
+   task:"Mostre o <code>nome</code> da pessoa e o <code>item</code> de todas as <code>compras</code> cujo item contém <b>luvas</b>.",
+   hint:"Junte <code>pessoas</code> com <code>compras</code> pelo id da pessoa e filtre com <code>c.item LIKE '%luvas%'</code>.",
+   sol:"SELECT p.nome, c.item FROM pessoas p JOIN compras c ON p.id = c.pessoa_id WHERE c.item LIKE '%luvas%'", note:"Rafael comprou luvas de látex; Caio, luvas de couro."},
+  {t:"Fechando o cerco",c:"JOIN duplo",
+   story:"Hora de cruzar tudo: quem estava no museu depois das 22h no dia do crime <b>e</b> comprou luvas?",
+   task:"Mostre apenas o <code>nome</code> (sem repetições) das pessoas que saíram depois de <b>'22:00'</b> no dia <b>'2026-10-14'</b> e compraram algum item com <b>luvas</b>.",
+   hint:"Use dois JOINs: <code>pessoas p JOIN visitas v ON ... JOIN compras c ON ...</code>, três condições no WHERE e <code>SELECT DISTINCT p.nome</code>.",
+   sol:"SELECT DISTINCT p.nome FROM pessoas p JOIN visitas v ON p.id = v.pessoa_id JOIN compras c ON p.id = c.pessoa_id WHERE v.dia = '2026-10-14' AND v.hora_saida > '22:00' AND c.item LIKE '%luvas%'", note:"Restam dois suspeitos: Rafael Nunes e Caio Ferraz."}
+];
+const CULPRIT = 8;
+
+const KEY = "detetive-sql-v1";
+let state = {current:0, solved:[], hints:[], xp:0, closed:false};
+try { const s = localStorage.getItem(KEY); if (s) state = Object.assign(state, JSON.parse(s)); } catch(e){}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
+
+function makeDb(){
+  const db = new alasql.Database();
+  for (const [name, t] of Object.entries(DATA)){
+    db.exec(`CREATE TABLE ${name} (${t.cols.join(",")})`);
+    db.tables[name].data = t.rows.map(r => Object.fromEntries(t.cols.map((c,i)=>[c,r[i]])));
+  }
+  return db;
+}
+function runSql(sql){
+  const clean = sql.trim().replace(/;+\s*$/,"");
+  if (!clean) throw new Error("Escreva uma consulta antes de executar.");
+  if (!/^\s*select\b/i.test(clean)) throw new Error("Neste caso, só consultas que começam com SELECT são aceitas — os arquivos do museu não podem ser alterados.");
+  if (clean.includes(";")) throw new Error("Execute uma consulta por vez (sem ponto e vírgula no meio).");
+  const res = makeDb().exec(clean);
+  if (!Array.isArray(res)) throw new Error("A consulta não retornou linhas.");
+  return res;
+}
+const rowKey = r => Object.values(r).map(v => String(v)).sort().join("\u0001");
+function same(a, b, ordered){
+  if (a.length !== b.length) return false;
+  const ka = a.map(rowKey), kb = b.map(rowKey);
+  if (!ordered){ ka.sort(); kb.sort(); }
+  return ka.every((k,i)=>k===kb[i]);
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function renderTable(rows){
+  if (!rows.length) return '<p style="padding:10px;margin:0">Nenhuma linha encontrada. Confira os filtros do WHERE.</p>';
+  const cols = Object.keys(rows[0]);
+  return `<table><thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${
+    rows.map(r=>`<tr>${cols.map(c=>`<td>${esc(r[c] ?? "NULL")}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+}
+
+function renderTrail(){
+  const el = document.getElementById("trail");
+  const maxOpen = Math.max(...state.solved, -1) + 1;
+  el.innerHTML = LEVELS.map((l,i)=>`<button class="${state.solved.includes(i)?"done":""} ${i===state.current?"current":""}" ${i>maxOpen?"disabled":""} data-i="${i}" title="${esc(l.t)}" aria-label="Fase ${i+1}: ${esc(l.t)}">${i+1}</button>`).join("")
+    + `<button class="final ${state.current===LEVELS.length?"current":""} ${state.closed?"done":""}" ${state.solved.length<LEVELS.length?"disabled":""} data-i="${LEVELS.length}" title="Acusação final" aria-label="Acusação final">?</button>`;
+  el.querySelectorAll("button").forEach(b => b.onclick = () => { state.current = +b.dataset.i; save(); render(); });
+  document.getElementById("xp").textContent = state.xp;
+  document.getElementById("solved").textContent = state.solved.length;
+  document.getElementById("total").textContent = LEVELS.length;
+}
+function renderSchema(){
+  document.getElementById("schema").innerHTML = Object.entries(DATA).map(([n,t])=>
+    `<div class="tbl"><button data-ins="${n}" title="Inserir nome da tabela">${n}</button><ul>${t.cols.map(c=>`<li>${c}</li>`).join("")}</ul></div>`).join("");
+  document.querySelectorAll("[data-ins]").forEach(b => b.onclick = () => insert(b.dataset.ins + " "));
+}
+function renderNotes(){
+  document.getElementById("notes").innerHTML = state.solved.length
+    ? LEVELS.filter((_,i)=>state.solved.includes(i)).map(l=>`<li>${l.note}</li>`).join("")
+    : "<li>Resolva a primeira fase para registrar sua primeira pista.</li>";
+}
+function insert(txt){
+  const ta = document.getElementById("sql"); if (!ta) return;
+  const s = ta.selectionStart, e = ta.selectionEnd;
+  ta.value = ta.value.slice(0,s) + txt + ta.value.slice(e);
+  ta.focus(); ta.selectionStart = ta.selectionEnd = s + txt.length;
+}
+
+function renderLevel(i){
+  const l = LEVELS[i];
+  const solved = state.solved.includes(i);
+  document.getElementById("main").innerHTML = `
+    <div class="mission">
+      <h2>${i+1}. ${l.t}</h2>
+      <span class="concept">${l.c}</span>
+      <p class="story">${l.story}</p>
+      <div class="task">${l.task}</div>
+      <div class="hint" id="hint" ${state.hints.includes(i)?"":"hidden"}>Dica: ${l.hint}</div>
+    </div>
+    <div class="chips" aria-label="Atalhos de SQL">
+      ${["SELECT","*","FROM","WHERE","AND","LIKE '%%'","ORDER BY","DESC","COUNT(*)","GROUP BY","JOIN","ON","DISTINCT","AS"].map(k=>`<button data-k="${esc(k)}">${esc(k)}</button>`).join("")}
+    </div>
+    <label for="sql" class="kbd">Sua consulta</label>
+    <textarea id="sql" spellcheck="false" autocapitalize="off" autocorrect="off">${esc(l.start ?? "")}</textarea>
+    <div class="actions">
+      <button class="btn primary" id="run">Executar consulta</button>
+      <button class="btn ghost" id="hintBtn" ${state.hints.includes(i)?"hidden":""}>Ver dica (−25 pontos)</button>
+      ${solved && i < LEVELS.length-1 ? `<button class="btn ghost" id="next">Próxima fase</button>` : ""}
+      ${solved && i === LEVELS.length-1 ? `<button class="btn ghost" id="next">Fazer a acusação</button>` : ""}
+      <span class="kbd">Ctrl + Enter também executa</span>
+    </div>
+    <div class="feedback" id="fb"></div>
+    <div class="result" id="res"></div>
+    <div class="rowcount" id="rc"></div>`;
+  document.querySelectorAll("[data-k]").forEach(b => b.onclick = () => insert(b.dataset.k + " "));
+  const ta = document.getElementById("sql");
+  ta.addEventListener("keydown", e => { if ((e.ctrlKey||e.metaKey) && e.key === "Enter"){ e.preventDefault(); check(i); }});
+  document.getElementById("run").onclick = () => check(i);
+  document.getElementById("hintBtn").onclick = () => {
+    if (!state.hints.includes(i)) state.hints.push(i);
+    save(); document.getElementById("hint").hidden = false; document.getElementById("hintBtn").hidden = true;
+  };
+  const nx = document.getElementById("next"); if (nx) nx.onclick = () => { state.current = i+1; save(); render(); };
+}
+
+function check(i){
+  const l = LEVELS[i], fb = document.getElementById("fb"), res = document.getElementById("res"), rc = document.getElementById("rc");
+  let rows;
+  try { rows = runSql(document.getElementById("sql").value); }
+  catch(e){
+    fb.className = "feedback err";
+    fb.textContent = "Erro na consulta: " + (e.message || e) + " Confira nomes de tabelas e colunas no arquivo do caso.";
+    res.style.display = "none"; rc.textContent = ""; return;
+  }
+  res.style.display = "block"; res.innerHTML = renderTable(rows);
+  rc.textContent = rows.length + (rows.length === 1 ? " linha" : " linhas");
+  const expected = runSql(l.sol);
+  if (same(rows, expected, l.ordered)){
+    const first = !state.solved.includes(i);
+    if (first){
+      const pts = state.hints.includes(i) ? 75 : 100;
+      state.solved.push(i); state.xp += pts; save();
+      fb.className = "feedback ok";
+      fb.innerHTML = `<strong>Pista encontrada! +${pts} pontos.</strong> ${l.note}`;
+    } else {
+      fb.className = "feedback ok"; fb.innerHTML = `<strong>Correto de novo.</strong> ${l.note}`;
+    }
+    renderTrail(); renderNotes();
+    const acts = document.querySelector(".actions");
+    if (!document.getElementById("next")){
+      const b = document.createElement("button");
+      b.className = "btn ghost"; b.id = "next";
+      b.textContent = i < LEVELS.length-1 ? "Próxima fase" : "Fazer a acusação";
+      b.onclick = () => { state.current = i+1; save(); render(); };
+      acts.insertBefore(b, acts.querySelector(".kbd"));
+    }
+  } else {
+    fb.className = "feedback err";
+    let why = `A consulta rodou, mas o resultado não bate com a pista. Esperava ${expected.length} ${expected.length===1?"linha":"linhas"} e veio ${rows.length}.`;
+    if (rows.length === expected.length && l.ordered && same(rows, expected, false)) why = "As linhas estão certas, mas a ordem não. Confira o ORDER BY.";
+    else if (rows.length === expected.length) why += " Confira se escolheu as colunas pedidas.";
+    fb.textContent = why;
+  }
+}
+
+function renderFinal(){
+  const main = document.getElementById("main");
+  if (state.solved.length < LEVELS.length){ state.current = 0; return render(); }
+  const ppl = DATA.pessoas.rows;
+  main.innerHTML = `
+    <div class="mission">
+      <h2>A acusação</h2>
+      <p class="story">Suas consultas reduziram a lista a dois nomes: <b>Rafael Nunes</b> e <b>Caio Ferraz</b>. Releia suas anotações — um depoimento descreve quem saiu pelos fundos. Quem levou o diamante?</p>
+    </div>
+    <div class="suspects">${ppl.map(p=>`<button data-p="${p[0]}">${esc(p[1])}<span>${esc(p[4])}, ${esc(p[3])}</span></button>`).join("")}</div>
+    <div id="verdict"></div>`;
+  if (state.closed) showVerdict();
+  main.querySelectorAll("[data-p]").forEach(b => b.onclick = () => {
+    if (+b.dataset.p === CULPRIT){
+      if (!state.closed){ state.closed = true; state.xp += 200; save(); renderTrail(); }
+      showVerdict();
+    } else {
+      b.classList.add("wrong");
+      document.getElementById("verdict").innerHTML = `<div class="feedback err" style="display:block">${esc(b.firstChild.textContent)} tem um álibi nas evidências. Releia as anotações e tente de novo.</div>`;
+    }
+  });
+}
+function showVerdict(){
+  document.querySelector(`[data-p="${CULPRIT}"]`).classList.add("right");
+  document.getElementById("verdict").innerHTML = `
+    <div class="stamp">Caso encerrado</div>
+    <p class="story">Caio Ferraz, o fotógrafo, fotografou as câmeras de segurança na semana anterior, comprou luvas de couro, saiu às 23:15 no dia do crime e foi visto com uma bolsa de câmera pelos fundos. O diamante estava escondido nela.</p>
+    <p class="story">Você usou SELECT, WHERE, AND, ORDER BY, LIKE, COUNT, GROUP BY, JOIN e DISTINCT. Pontuação final: <b>${state.xp}</b>.</p>`;
+}
+
+function render(){
+  renderTrail(); renderSchema(); renderNotes();
+  if (state.current >= LEVELS.length) renderFinal(); else renderLevel(state.current);
+}
+document.getElementById("resetBtn").onclick = () => {
+  if (!confirm("Apagar todo o progresso e recomeçar o caso?")) return;
+  state = {current:0, solved:[], hints:[], xp:0, closed:false}; save(); render();
+};
+if (typeof alasql === "undefined"){
+  document.getElementById("main").innerHTML = '<p>O motor de SQL não carregou. Recarregue a página para tentar de novo.</p>';
+} else render();
+</script>
+</body>
+</html>
